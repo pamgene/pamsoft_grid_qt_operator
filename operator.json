@@ -1,0 +1,11 @@
+{
+  "name": "OPERATOR NAME",
+  "description": "DESCRIPTION",
+  "tags": ["template"],
+  "authors": ["tercen"],
+  "urls": ["https://github.com/tercen/OPERATOR_NAME"],
+  "container": "tercen/CONTAINER_NAME:TAG",
+  "isWebApp": false
+}
+
+
