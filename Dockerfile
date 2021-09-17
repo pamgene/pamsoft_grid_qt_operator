@@ -1,25 +1,16 @@
-FROM tercen/dartrusttidy:1.0.7
+FROM tercen/pamsoft_grid:latest
 
-USER root
+ENV RENV_VERSION 0.9.2
+RUN R -e "install.packages('remotes', repos = c(CRAN = 'https://cran.r-project.org'))"
+RUN R -e "remotes::install_github('rstudio/renv@${RENV_VERSION}')"
+
+COPY . /operator
+
 WORKDIR /operator
 
-RUN git clone https://github.com/tercen/OPERATOR_NAME.git
-
-WORKDIR /operator/OPERATOR_NAME
-
-RUN echo X.X.X && git pull
-RUN git checkout X.X.X
-
-RUN R -e "renv::restore(confirm=FALSE)"
+RUN R  --vanilla -e "renv::restore(confirm=FALSE)"
 
 ENV TERCEN_SERVICE_URI https://tercen.com
 
-COPY start.R /start.R
-
-ENTRYPOINT [ "R","--no-save","--no-restore","--no-environ","--slave","-f","/start.R"]
-
-
-
-
-
-
+ENTRYPOINT [ "R","--no-save","--no-restore","--no-environ","--slave","-f","main.R", "--args"]
+CMD [ "--taskId", "someid", "--serviceUri", "https://tercen.com", "--token", "sometoken"]

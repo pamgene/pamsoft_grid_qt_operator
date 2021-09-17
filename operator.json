@@ -1,11 +1,25 @@
 {
-  "name": "OPERATOR NAME",
-  "description": "DESCRIPTION",
-  "tags": ["template"],
+  "name": "pamsoft_grid_qt_operator",
+  "description": "pamsoft_grid_qt_operator",
+  "tags": ["image analysis"],
   "authors": ["tercen"],
-  "urls": ["https://github.com/tercen/OPERATOR_NAME"],
-  "container": "tercen/CONTAINER_NAME:TAG",
-  "isWebApp": false
+  "urls": ["https://github.com/tercen/pamsoft_grid_qt_operator"],
+  "container": "tercen/pamsoft_grid_qt_operator:latest",
+  "properties": [
+   {
+    "kind": "DoubleProperty",
+    "name": "sqcMinDiameter",
+    "defaultValue":0.45,
+    "description": ""
+    },
+    
+    {
+    "kind": "DoubleProperty",
+    "name": "grdSpotPitch",
+    "defaultValue":21.5,
+    "description": ""
+    }
+  ]
 }
 
 
