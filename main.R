@@ -86,7 +86,6 @@ get_column_with_namespace <- function(colName, colNameList){
     colName_ <- vec_last(nameParts)
     if ( firstChar != "." &&  grepl( colName, colName_) == TRUE){
       # Get the previous namespace
-      
       namespace <-nameParts[1]
       fullColName <- colNameList[i]
     }
@@ -119,16 +118,14 @@ do.quant <- function(df, props, docId, imgInfo){
   imageCol <- get_column_with_namespace("\\<grdImageNameUsed\\>", names(scolNames))
   
   
-  #TODO Add error handling here
   imageName <- scolNames[imageCol[1]]
   imageName <- imageName[[1]][1]
   
   colInfo <- ctx$cselect() %>% filter((!!sym(imageCol[1])) ==  df[[imageCol[1]]][1])
   uImage <- unique( pull(colInfo, "ds0.Image" ) )
-  #colInfo <- ctx$cselect() %>% filter(ds0.Image == df$ds0.Image[1]) 
   
   qntIdCol <- get_column_with_namespace("qntSpotID", names(scolNames))
-  #qntSpotID <-colInfo$ds1.qntSpotID
+
   qntSpotID <- colInfo[[qntIdCol[1]]]
   grdIsReference <- rep(0,length(qntSpotID))
   for(i in seq_along(qntSpotID)) {
@@ -221,7 +218,6 @@ do.quant <- function(df, props, docId, imgInfo){
   
   write(jsonData, jsonFile)
   
-  # CHECK FILES BEING GENERATED AND RUN THIS!
   system(paste("/mcr/exe/pamsoft_grid \"--param-file=", jsonFile[1], "\"", sep=""))
   
   
@@ -305,7 +301,6 @@ do.quant <- function(df, props, docId, imgInfo){
         
         colI[k] <- df$.ci[i]
         
-        # RUN AGAIN, DOuble check this value
         if(quantOutput$Row[i] < 0){
           oIsRef[k] <- 1
         }
