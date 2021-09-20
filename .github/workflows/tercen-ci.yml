@@ -6,7 +6,7 @@ name: CI
 # events but only for the master branch
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
     tags:
       - '*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
