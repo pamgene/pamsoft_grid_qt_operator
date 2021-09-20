@@ -22,6 +22,8 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+        with:
+          ref: main
       - name: TERCEN_VERSION
         run: |
           echo "TERCEN_VERSION=${GITHUB_REF##*/}" >> $GITHUB_ENV
