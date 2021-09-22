@@ -43,6 +43,13 @@ get_operator_props <- function(ctx, imagesFolder){
   return (props)
 }
 
+remove_variable_ns <- function(varName){
+  fname <- str_split(varName, '[.]', Inf)
+  fext <- fname[[1]][2]
+  
+  return(fext)
+}
+
 
 prep_image_folder <- function(docId){
   #1. extract files
@@ -73,28 +80,6 @@ prep_image_folder <- function(docId){
   
 }
 
-vec_last <- function(x) { return(x[length(x)]) }
-
-get_column_with_namespace <- function(colName, colNameList){
-  namespace <- ""
-  fullColName <- ""
-  
-  
-  for (i in 1:length(colNameList)){
-    firstChar <- substring(colNameList[i], 1, 1)
-    nameParts <- str_split_fixed(colNameList[i], "\\.", Inf)
-    colName_ <- vec_last(nameParts)
-    if ( firstChar != "." &&  grepl( colName, colName_) == TRUE){
-      # Get the previous namespace
-      namespace <-nameParts[1]
-      fullColName <- colNameList[i]
-    }
-  }
-  
-  return( c(fullColName, namespace))
-}
-
-
 
 do.quant <- function(df, props, docId, imgInfo){
   sqcMinDiameter       <- 0.45 #as.numeric(props$sqcMinDiameter) #0.45
@@ -108,25 +93,28 @@ do.quant <- function(df, props, docId, imgInfo){
   #-----------------------------------------------
   # END of property setting
   
-  
-  scolNames <- ctx$cselect()
-  rowNames  <- ctx$rselect()
-  colNames  <- names(df)
+  grd.ImageNameUsed = df$grdImageNameUsed[[1]]
   
   
+  # JUst need the image used for gridding, so we get the table from that
+  gridImageUsedTable = df %>% filter(Image == grd.ImageNameUsed)
+  gridImageUsedTable$variable = sapply(gridImageUsedTable$variable, remove_variable_ns)
   
-  imageCol <- get_column_with_namespace("\\<grdImageNameUsed\\>", names(scolNames))
+  grdRow <- gridImageUsedTable %>% filter(variable == "grdXOffset") %>% pull(grdRow)
+  grdCol <- gridImageUsedTable %>% filter(variable == "grdYOffset") %>% pull(grdCol)
   
+  grdXOffset <- gridImageUsedTable %>% filter(variable == "grdXOffset") %>% pull(.y)
+  grdYOffset <- gridImageUsedTable %>% filter(variable == "grdYOffset") %>% pull(.y)
   
-  imageName <- scolNames[imageCol[1]]
-  imageName <- imageName[[1]][1]
+  grdXFixedPosition <- gridImageUsedTable %>% filter(variable == "grdXFixedPosition") %>% pull(.y)
+  grdYFixedPosition <- gridImageUsedTable %>% filter(variable == "grdYFixedPosition") %>% pull(.y)
   
-  colInfo <- ctx$cselect() %>% filter((!!sym(imageCol[1])) ==  df[[imageCol[1]]][1])
-  uImage <- unique( pull(colInfo, "ds0.Image" ) )
+  gridX <- gridImageUsedTable %>% filter(variable == "gridX") %>% pull(.y)
+  gridY <- gridImageUsedTable %>% filter(variable == "gridY") %>% pull(.y)
   
-  qntIdCol <- get_column_with_namespace("qntSpotID", names(scolNames))
-
-  qntSpotID <- colInfo[[qntIdCol[1]]]
+  grdRotation <- gridImageUsedTable %>% filter(variable == "grdRotation") %>% pull(.y)
+  
+  qntSpotID <-gridImageUsedTable %>% filter(variable == "grdRotation") %>% pull(qntSpotID)
   grdIsReference <- rep(0,length(qntSpotID))
   for(i in seq_along(qntSpotID)) {
     if (qntSpotID[i] == "#REF"){
@@ -134,59 +122,30 @@ do.quant <- function(df, props, docId, imgInfo){
     }
   }
   
-  ciNamespace <- get_column_with_namespace("grdRow", names(colInfo))[2]
-  gatherCol <- get_column_with_namespace("variable", colNames)[1]
-  
-  grdRow <- colInfo[[paste(ciNamespace, "grdRow", sep=".")]]
-  grdCol <- colInfo[[paste(ciNamespace, "grdCol", sep=".")]]
-  
-  #Normally gs0.variable containing the variable names from the previous gather step
-  # i.e. the resulting columns of the gridding operation
-  grdXOffset <- df %>% filter((!!sym(gatherCol[1])) == paste(ciNamespace, "grdXOffset", sep=".") ) %>% pull(.y)
-  grdYOffset <- df %>% filter( (!!sym(gatherCol[1])) == paste(ciNamespace, "grdYOffset", sep=".") ) %>% pull(.y)
-  
-  
-  grdXFixedPosition <- df %>% filter( (!!sym(gatherCol[1])) == paste(ciNamespace, "grdXFixedPosition", sep=".") ) %>% pull(.y)
-  grdYFixedPosition <- df %>% filter( (!!sym(gatherCol[1])) == paste(ciNamespace, "grdYFixedPosition", sep=".") ) %>% pull(.y)
-  
-  gridX <- df %>% filter( (!!sym(gatherCol[1])) == paste(ciNamespace, "gridX", sep=".") ) %>% pull(.y)
-  gridY <- df %>% filter( (!!sym(gatherCol[1])) == paste(ciNamespace, "gridY", sep=".") ) %>% pull(.y)
-  
-  grdRotation <- df %>% filter( (!!sym(gatherCol[1])) == paste(ciNamespace, "grdRotation", sep=".") ) %>% pull(.y)
-  grdImageNameUsed <- colInfo[[paste(ciNamespace, "grdImageNameUsed", sep=".")]]
-  
-  
-  imageAppCol <- get_column_with_namespace("\\<Image\\>", names(scolNames))[1]
-  
-  imageList <- uImage #pull( colInfo, imageAppCol) 
-  
+  imageList <- unique( pull(df, "Image" ) )
   
   for(i in seq_along(imageList)) {
     imageList[i] <- paste(imgInfo[1], imageList[i], sep = "/" )
     imageList[i] <- paste(imageList[i], imgInfo[2], sep = "." )
   }
   
-  
-  imageUsedPath <- paste(imgInfo[1], grdImageNameUsed, sep = "/" )
+  imageUsedPath <- paste(imgInfo[1],  grd.ImageNameUsed, sep = "/" )
   imageUsedPath <- paste(imageUsedPath, imgInfo[2], sep = "." )
-  
-  uIdx <- 1:(length(qntSpotID)/length(imageList))
-  
   
   
   dfGrid <- data.frame(
-    "qntSpotID"=qntSpotID[uIdx],
-    "grdIsReference"=grdIsReference[uIdx],
-    "grdRow"=grdRow[uIdx],
-    "grdCol"=grdCol[uIdx],
-    "grdXOffset"=grdXOffset[uIdx],
-    "grdYOffset"=grdYOffset[uIdx],
-    "grdXFixedPosition"=grdXFixedPosition[uIdx],
-    "grdYFixedPosition"=grdYFixedPosition[uIdx],
-    "gridX"=gridX[uIdx],
-    "gridY"=gridY[uIdx],
-    "grdRotation"=grdRotation[uIdx],
-    "grdImageNameUsed"=imageUsedPath[uIdx]
+    "qntSpotID"=qntSpotID,
+    "grdIsReference"=grdIsReference,
+    "grdRow"=grdRow,
+    "grdCol"=grdCol,
+    "grdXOffset"=grdXOffset,
+    "grdYOffset"=grdYOffset,
+    "grdXFixedPosition"=grdXFixedPosition,
+    "grdYFixedPosition"=grdYFixedPosition,
+    "gridX"=gridX,
+    "gridY"=gridY,
+    "grdRotation"=grdRotation,
+    "grdImageNameUsed"=imageUsedPath
   )
   
   
@@ -196,6 +155,7 @@ do.quant <- function(df, props, docId, imgInfo){
   
   write.table(dfGrid, gridfile, quote=FALSE,sep=",", row.names = FALSE)
   
+  # The rest of the code should be very similar
   outputfile <- tempfile(fileext=".txt") 
   on.exit(unlink(outputfile))
   
@@ -218,145 +178,35 @@ do.quant <- function(df, props, docId, imgInfo){
   
   write(jsonData, jsonFile)
   
+  
   system(paste("/mcr/exe/pamsoft_grid \"--param-file=", jsonFile[1], "\"", sep=""))
   
   
   quantOutput <- read.csv(outputfile, header = TRUE)
   nGrid       <- nrow(quantOutput)
   
-
   
-  dfCol <- df %>% filter( gs0.variable == "ds1.grdRotation" ) %>% pull(.ci)
-  dfRow <- df %>% filter( gs0.variable == "ds1.grdRotation" ) %>% pull(.ri)
-  img <- colInfo %>%  pull(ds0.Image)
   
-  nImg <- length(gridX)/length(uIdx)
-
-  oMeanSigmBg <- quantOutput$Mean_SigmBg
-  oMedianSigmBg <- oMeanSigmBg
-  oRseMedianSigmBg <- oMeanSigmBg
-  oMeanSignal <- oMeanSigmBg
-  oMedianSignal <- oMeanSigmBg
-  oStdSignal <- oMeanSigmBg
-  oSumSignal <- oMeanSigmBg
-  oRse_Signal <- oMeanSigmBg
-  oMeanBackground <- oMeanSigmBg
-  oMedianBackground <- oMeanSigmBg
-  oStdBackground <- oMeanSigmBg
-  oSumBackground <- oMeanSigmBg
-  oRseBackground <- oMeanSigmBg
-  oSignalSaturation <- oMeanSigmBg
-  oFracIgnored <- oMeanSigmBg
-  oDiameter <- oMeanSigmBg
-  oPosOffset <- oMeanSigmBg
-  oEmptySpot <- oMeanSigmBg
-  oBadSpot <- oMeanSigmBg
-  oReplacedSpot <- oMeanSigmBg
+  inTable = df %>% select(.ci, grdCol, grdRow, Image)
   
-  oRow <- oMeanSigmBg
-  oCol <- oMeanSigmBg
-  oImg <- img
-  oDel <- oMeanSigmBg
-  oIsRef <- oMeanSigmBg
+  quantOutput =  quantOutput %>% 
+    rename(grdCol = Column) %>%
+    rename(grdRow = Row) %>%
+    rename(Image = ImageName)
   
-  colI <- oMeanSigmBg
-  rowI <- oMeanSigmBg
+  quantOutput = quantOutput %>% left_join(inTable, by=c("grdCol", "grdRow", "Image")) %>%
+    select(-grdCol, -grdRow, Image)
   
-  k <- 1
-  for (z in 1:7){
-    sids <- oMeanSigmBg
-    for( j in 1:nImg ){
-      
-      for( w in 1:(length(uIdx))){
-        i <- w + ((j-1)*length(uIdx)) 
-
-        
-        sids[k] <- w
-        
-        oMeanSigmBg[k] <- quantOutput$Mean_SigmBg[i]
-        
-        oMedianSigmBg[k] <- quantOutput$Median_SigmBg[i]
-        oRseMedianSigmBg[k] <- quantOutput$Rse_MedianSigmBg[i]
-        oMeanSignal[k] <- quantOutput$Mean_Signal[i]
-        oMedianSignal[k] <- quantOutput$Median_Signal[i]
-        oStdSignal[k] <- quantOutput$Std_Signal[i]
-        oSumSignal[k] <- quantOutput$Sum_Signal[i]
-        oRse_Signal[k] <- quantOutput$Rse_Signal[i]
-        oMeanBackground[k] <- quantOutput$Mean_Background[i]
-        oMedianBackground[k] <- quantOutput$Median_Background[i]
-        oStdBackground[k] <- quantOutput$Std_Background[i]
-        oSumBackground[k] <- quantOutput$Sum_Background[i]
-        oRseBackground[k] <- quantOutput$Rse_Background[i]
-        oSignalSaturation[k] <- quantOutput$Signal_Saturation[i]
-        oFracIgnored[k] <- quantOutput$Fraction_Ignored[i]
-        oDiameter[k] <- quantOutput$Diameter[i]
-        oPosOffset[k] <- quantOutput$Position_Offset[i]
-        oEmptySpot[k] <- quantOutput$Empty_Spot[i]
-        oBadSpot[k] <- quantOutput$Bad_Spot[i]
-        oReplacedSpot[k] <- quantOutput$Replaced_Spot[i]
-        
-        oRow[k] <- quantOutput$Row[i]
-        oCol[k] <- quantOutput$Col[i]
-        oImg[k] <- img[i]
-        
-        colI[k] <- df$.ci[i]
-        
-        if(quantOutput$Row[i] < 0){
-          oIsRef[k] <- 1
-        }
-        else{
-          oIsRef[k] <- 0
-        }
-        
-        if(j == 1 && z == 1){
-          oDel[k] <- 1
-        }else{
-          oDel[k] <- 0
-        }
-        
-        k <- k + 1
-      }
-    }
-  }
-
-  outFrame <- data.frame( 
-    .ci = colI,
-    ds0.Image = oImg,
-    rFac = oDel,
-    MeanSigmBg = oMeanSigmBg,
-    MedianSigmBg = oMedianSigmBg,
-    RseMedianSigmBg =oRseMedianSigmBg,
-    MeanSignal = oMeanSignal,
-    MedianSignal = oMedianSignal,
-    StdSignal = oStdSignal,
-    SumSignal = oSumSignal,
-    Rse_Signal = oRse_Signal,
-    MeanBackground = oMeanBackground,
-    MedianBackground = oMedianBackground,
-    StdBackground = oStdBackground,
-    SumBackground = oSumBackground,
-    RseBackground = oRseBackground,
-    SignalSaturation = oSignalSaturation,
-    FracIgnored = oFracIgnored,
-    Diameter = oDiameter,
-    PosOffset = oPosOffset,
-    EmptySpot = oEmptySpot,
-    BadSpot = oBadSpot,
-    ReplacedSpot = oReplacedSpot
-  )
   
-  return(outFrame)
+  return(quantOutput)
 }
+
+
+
 
 # =====================
 # MAIN OPERATOR CODE
 # =====================
-
-ctx = tercenCtx()
-
-if (!any(ctx$cnames == "documentId")) stop("Column factor documentId is required") 
-#if (length(ctx$labels) == 0) stop("Label factor containing the image name must be defined") 
-
 # Set LD_LIBRARY_PATH environment variable to speed calling pamsoft_grid multiple times
 MCR_PATH <- "/opt/mcr/v99"
 LIBPATH <- "."
@@ -375,21 +225,53 @@ Sys.setenv( "LD_LIBRARY_PATH" = LIBPATH )
 # ---------------------------------------
 # END MCR Path setting
 
-docId     <- unique( ctx %>% cselect(documentId)  )[1]
-docId     <- docId$documentId
+
+ctx = tercenCtx()
+
+required.cnames = c("documentId","grdImageNameUsed","Image","grdRow","grdCol","qntSpotID")
+required.rnames = c("variable")
+
+cnames.with.ns = ctx$cnames
+rnames.with.ns = ctx$rnames
+
+# here we keep the order of required.cnames
+required.cnames.with.ns = lapply(required.cnames, function(required.cname){
+  Find(function(cname.with.ns){
+    endsWith(cname.with.ns, required.cname)
+  }, cnames.with.ns, nomatch=required.cname)
+})
+
+required.rnames.with.ns = lapply(required.rnames, function(required.rname){
+  Find(function(rname.with.ns){
+    endsWith(rname.with.ns, required.rname)
+  }, rnames.with.ns, nomatch=required.rname)
+})
+
+# TODO Handle error if required columns are not here
+cTable <- ctx$cselect(required.cnames.with.ns)
+rTable <- ctx$rselect(required.rnames.with.ns)
+
+# override the names
+names(cTable) = required.cnames
+names(rTable) = required.rnames
 
 
+docId     <- unique( cTable["documentId"]  )[[1]]
 imgInfo   <- prep_image_folder(docId)
 props     <- get_operator_props(ctx, imgInfo[1])
 
+qtTable <- ctx$select(c(".ci", ".ri", ".y"))
+cTable[[".ci"]] = seq(0, nrow(cTable)-1)
 
-# GET necessary columns with their namespace
-colNames  <- names(ctx$cselect())
+qtTable = dplyr::left_join(qtTable,cTable,by=".ci")
 
+rTable[[".ri"]] = seq(0, nrow(rTable)-1)
 
-ctx$select() %>% 
-  group_by(ds1.grdImageNameUsed)   %>%
-  do(do.quant(., props, docId, imgInfo)) %>%
+qtTable = dplyr::left_join(qtTable,rTable,by=".ri")
+
+qtTable%>% 
+  group_by(grdImageNameUsed)   %>%
+  do(do.quant(., props, docId, imgInfo))  %>%
   ctx$addNamespace() %>%
   ctx$save() 
 
