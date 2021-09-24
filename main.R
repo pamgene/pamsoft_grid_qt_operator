@@ -209,14 +209,15 @@ do.quant <- function(df, props, docId, imgInfo, totalDoExec){
   nGrid       <- nrow(quantOutput)
   
   
-  
-  inTable = df %>% select(.ci, spotCol, spotRow, Image)
+  # Filter by a single variable here with filter
+  inTable = df %>% filter(variable == "grdXOffset") %>% select(.ci, spotCol, spotRow, Image)
   
   quantOutput =  quantOutput %>% 
     rename(spotCol = Column) %>%
     rename(spotRow = Row) %>%
     rename(Image = ImageName)
   
+
   quantOutput = quantOutput %>% left_join(inTable, by=c("spotCol", "spotRow", "Image")) %>%
     select(-spotCol, -spotRow, Image) %>%
     mutate(across(where(is.numeric), as.double))
