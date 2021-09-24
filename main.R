@@ -115,7 +115,7 @@ do.quant <- function(df, props, docId, imgInfo){
   evt$taskId = task$id
   evt$total = totalDoExec
   evt$actual = actual
-  evt$message = "Performing quantification"
+  evt$message = paste("Performing quantification: ", actual, "/", totalDoExec, sep ="")
   ctx$client$eventService$sendChannel(task$channelId, evt)
   
   
@@ -296,7 +296,7 @@ qtTable = dplyr::left_join(qtTable,rTable,by=".ri")
 
 assign("actual", 0, envir = .GlobalEnv)
 
-totalDoExec <- nrow(unique(pull(qTable, "grdImageNameUsed")))
+totalDoExec <- nrow(unique(pull(qtTable, "grdImageNameUsed")))
 
 qtTable %>% 
   group_by(grdImageNameUsed)   %>%
