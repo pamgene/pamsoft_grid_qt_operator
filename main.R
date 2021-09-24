@@ -137,7 +137,7 @@ do.quant <- function(df, props, docId, imgInfo){
   
   grdRotation <- gridImageUsedTable %>% filter(variable == "grdRotation") %>% pull(.y)
   
-  qntSpotID <-gridImageUsedTable %>% filter(variable == "grdRotation") %>% pull(qntSpotID)
+  qntSpotID <-gridImageUsedTable %>% filter(variable == "grdRotation") %>% pull(ID)
   grdIsReference <- rep(0,length(qntSpotID))
   for(i in seq_along(qntSpotID)) {
     if (qntSpotID[i] == "#REF"){
@@ -218,7 +218,7 @@ do.quant <- function(df, props, docId, imgInfo){
     rename(Image = ImageName)
   
   quantOutput = quantOutput %>% left_join(inTable, by=c("spotCol", "spotRow", "Image")) %>%
-    select(-grdCol, -grdRow, Image) %>%
+    select(-spotCol, -spotRow, Image) %>%
     mutate(across(where(is.numeric), as.double))
   
   
