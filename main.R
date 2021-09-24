@@ -123,8 +123,8 @@ do.quant <- function(df, props, docId, imgInfo){
   gridImageUsedTable = df %>% filter(Image == grd.ImageNameUsed)
   gridImageUsedTable$variable = sapply(gridImageUsedTable$variable, remove_variable_ns)
   
-  grdRow <- gridImageUsedTable %>% filter(variable == "grdXOffset") %>% pull(grdRow)
-  grdCol <- gridImageUsedTable %>% filter(variable == "grdYOffset") %>% pull(grdCol)
+  grdRow <- gridImageUsedTable %>% filter(variable == "grdXOffset") %>% pull(spotRow)
+  grdCol <- gridImageUsedTable %>% filter(variable == "grdYOffset") %>% pull(spotCol)
   
   grdXOffset <- gridImageUsedTable %>% filter(variable == "grdXOffset") %>% pull(.y)
   grdYOffset <- gridImageUsedTable %>% filter(variable == "grdYOffset") %>% pull(.y)
@@ -210,7 +210,7 @@ do.quant <- function(df, props, docId, imgInfo){
   
   
   
-  inTable = df %>% select(.ci, grdCol, grdRow, Image)
+  inTable = df %>% select(.ci, spotCol, spotRow, Image)
   
   quantOutput =  quantOutput %>% 
     rename(spotCol = Column) %>%
