@@ -94,7 +94,7 @@ prep_image_folder <- function(docId){
 }
 
 
-do.quant <- function(df, props, docId, imgInfo){
+do.quant <- function(df, props, docId, imgInfo, totalDoExec){
   sqcMinDiameter       <- 0.45 #as.numeric(props$sqcMinDiameter) #0.45
   segEdgeSensitivity   <- list(0, 0.01)
   qntSeriesMode        <- 0
@@ -300,7 +300,7 @@ totalDoExec <- nrow(unique(pull(qtTable, "grdImageNameUsed")))
 
 qtTable %>% 
   group_by(grdImageNameUsed)   %>%
-  do(do.quant(., props, docId, imgInfo))  %>%
+  do(do.quant(., props, docId, imgInfo, totalDoExec))  %>%
   ctx$addNamespace() %>%
   ctx$save() 
 
