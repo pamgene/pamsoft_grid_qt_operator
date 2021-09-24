@@ -52,6 +52,19 @@ remove_variable_ns <- function(varName){
 
 
 prep_image_folder <- function(docId){
+  task = ctx$task
+  
+  #headers   <- ifelse(is.null(ctx$op.value('headers')), TRUE, as.boolean(ctx$op.value('headers')))
+  #separator <- ifelse(is.null(ctx$op.value('Separator')), "Comma", ctx$op.value('Separator'))
+  
+  
+  evt = TaskProgressEvent$new()
+  evt$taskId = task$id
+  evt$total = 1
+  evt$actual = 0
+  evt$message = "Downloading image files"
+  ctx$client$eventService$sendChannel(task$channelId, evt)
+  
   #1. extract files
   doc   <- ctx$client$fileService$get(docId )
   filename <- tempfile()
@@ -94,6 +107,16 @@ do.quant <- function(df, props, docId, imgInfo){
   # END of property setting
   
   grd.ImageNameUsed = df$grdImageNameUsed[[1]]
+  
+  task = ctx$task
+  actual = get("actual",  envir = .GlobalEnv) + 1
+  assign("actual", actual, envir = .GlobalEnv)
+  evt = TaskProgressEvent$new()
+  evt$taskId = task$id
+  evt$total = totalDoExec
+  evt$actual = actual
+  evt$message = "Performing quantification"
+  ctx$client$eventService$sendChannel(task$channelId, evt)
   
   
   # JUst need the image used for gridding, so we get the table from that
@@ -190,12 +213,14 @@ do.quant <- function(df, props, docId, imgInfo){
   inTable = df %>% select(.ci, grdCol, grdRow, Image)
   
   quantOutput =  quantOutput %>% 
-    rename(grdCol = Column) %>%
-    rename(grdRow = Row) %>%
+    rename(spotCol = Column) %>%
+    rename(spotRow = Row) %>%
     rename(Image = ImageName)
   
-  quantOutput = quantOutput %>% left_join(inTable, by=c("grdCol", "grdRow", "Image")) %>%
-    select(-grdCol, -grdRow, Image)
+  quantOutput = quantOutput %>% left_join(inTable, by=c("spotCol", "spotRow", "Image")) %>%
+    select(-grdCol, -grdRow, Image) %>%
+    mutate(across(where(is.numeric), as.double))
+  
   
   
   return(quantOutput)
@@ -228,7 +253,7 @@ Sys.setenv( "LD_LIBRARY_PATH" = LIBPATH )
 
 ctx = tercenCtx()
 
-required.cnames = c("documentId","grdImageNameUsed","Image","grdRow","grdCol","qntSpotID")
+required.cnames = c("documentId","grdImageNameUsed","Image","spotRow","spotCol","ID")
 required.rnames = c("variable")
 
 cnames.with.ns = ctx$cnames
@@ -269,7 +294,11 @@ rTable[[".ri"]] = seq(0, nrow(rTable)-1)
 
 qtTable = dplyr::left_join(qtTable,rTable,by=".ri")
 
-qtTable%>% 
+assign("actual", 0, envir = .GlobalEnv)
+
+totalDoExec <- nrow(unique(pull(qTable, "grdImageNameUsed")))
+
+qtTable %>% 
   group_by(grdImageNameUsed)   %>%
   do(do.quant(., props, docId, imgInfo))  %>%
   ctx$addNamespace() %>%
