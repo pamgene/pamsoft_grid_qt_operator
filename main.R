@@ -210,7 +210,8 @@ do.quant <- function(df, props, docId, imgInfo, totalDoExec){
   
   
   # Filter by a single variable here with filter
-  inTable = df %>% filter(variable == "grdXOffset") %>% select(.ci, spotCol, spotRow, Image)
+  # %>% filter(variable == "grdXOffset")
+  inTable = df  %>% select(.ci, spotCol, spotRow, Image)
   
   quantOutput =  quantOutput %>% 
     rename(spotCol = Column) %>%
