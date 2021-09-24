@@ -296,7 +296,7 @@ qtTable = dplyr::left_join(qtTable,rTable,by=".ri")
 
 assign("actual", 0, envir = .GlobalEnv)
 
-totalDoExec <- nrow(unique(pull(qtTable, "grdImageNameUsed")))
+totalDoExec <- length(unique(pull(qtTable, "grdImageNameUsed")))
 
 qtTable %>% 
   group_by(grdImageNameUsed)   %>%
