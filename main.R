@@ -306,7 +306,7 @@ cluster_copy(cluster, "do.quant")
 
 cluster_copy(cluster, "remove_variable_ns")    
 
-cluster_assign(cluster, LIBPATH= LIBPATH)    
+#cluster_assign(cluster, LIBPATH=LIBPATH)    
 
 cluster_assign(cluster, props= props)    
 cluster_assign(cluster, imgInfo=imgInfo)    
