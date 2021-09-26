@@ -227,21 +227,21 @@ do.quant <- function(df, props, docId, imgInfo, totalDoExec){
 # =====================
 # MAIN OPERATOR CODE
 # =====================
-# Set LD_LIBRARY_PATH environment variable to speed calling pamsoft_grid multiple times
-#MCR_PATH <- "/opt/mcr/v99"
-#LIBPATH <- "."
+# Set LD_LIBRARY_PATH 
+MCR_PATH <- "/opt/mcr/v99"
+LIBPATH <- "."
 
-#MCR_PATH_1 <- paste(MCR_PATH, "runtime", "glnxa64", sep = "/")
-#MCR_PATH_2 <- paste(MCR_PATH, "bin", "glnxa64", sep = "/")
-#MCR_PATH_3 <- paste(MCR_PATH, "sys", "os", "glnxa64", sep = "/")
-#MCR_PATH_4 <- paste(MCR_PATH, "sys", "opengl", "lib", "glnxa64", sep = "/")
+MCR_PATH_1 <- paste(MCR_PATH, "runtime", "glnxa64", sep = "/")
+MCR_PATH_2 <- paste(MCR_PATH, "bin", "glnxa64", sep = "/")
+MCR_PATH_3 <- paste(MCR_PATH, "sys", "os", "glnxa64", sep = "/")
+MCR_PATH_4 <- paste(MCR_PATH, "sys", "opengl", "lib", "glnxa64", sep = "/")
 
-#LIBPATH <- paste(LIBPATH,MCR_PATH_1, sep = ":")
-#LIBPATH <- paste(LIBPATH,MCR_PATH_2, sep = ":")
-#LIBPATH <- paste(LIBPATH,MCR_PATH_3, sep = ":")
-#LIBPATH <- paste(LIBPATH,MCR_PATH_4, sep = ":")
+LIBPATH <- paste(LIBPATH,MCR_PATH_1, sep = ":")
+LIBPATH <- paste(LIBPATH,MCR_PATH_2, sep = ":")
+LIBPATH <- paste(LIBPATH,MCR_PATH_3, sep = ":")
+LIBPATH <- paste(LIBPATH,MCR_PATH_4, sep = ":")
 
-#Sys.setenv( "LD_LIBRARY_PATH" = LIBPATH )
+Sys.setenv( "LD_LIBRARY_PATH" = LIBPATH )
 # ---------------------------------------
 # END MCR Path setting
 
