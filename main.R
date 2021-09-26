@@ -196,7 +196,7 @@ do.quant <- function(df, props, docId, imgInfo, totalDoExec){
   
   
   # Filter by a single variable here with filter
-  inTable = df  %>% select(.ci, spotCol, spotRow, Image) %>% filter(.ri == 0 )
+  inTable = df  %>% select(.ci, .ri, spotCol, spotRow, Image) %>% filter(.ri == 0 )
   
   quantOutput =  quantOutput %>% 
     rename(spotCol = Column) %>%
@@ -292,6 +292,15 @@ assign("actual", 0, envir = .GlobalEnv)
 
 totalDoExec <- length(unique(pull(qtTable, "grdImageNameUsed")))
 
+task = ctx$task
+actual = get("actual",  envir = .GlobalEnv) + 1
+assign("actual", actual, envir = .GlobalEnv)
+evt = TaskProgressEvent$new()
+evt$taskId = task$id
+evt$total = totalDoExec
+evt$actual = 0
+evt$message = "Performing quantification"
+ctx$client$eventService$sendChannel(task$channelId, evt)
 
 qtTable %>% 
   group_by(grdImageNameUsed)   %>%
