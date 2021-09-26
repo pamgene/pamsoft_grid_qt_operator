@@ -4,6 +4,7 @@ library(dplyr)
 library(stringr)
 library(jsonlite)
 
+library(multidplyr)
 
 get_operator_props <- function(ctx, imagesFolder){
   sqcMinDiameter <- -1
@@ -53,11 +54,6 @@ remove_variable_ns <- function(varName){
 
 prep_image_folder <- function(docId){
   task = ctx$task
-  
-  #headers   <- ifelse(is.null(ctx$op.value('headers')), TRUE, as.boolean(ctx$op.value('headers')))
-  #separator <- ifelse(is.null(ctx$op.value('Separator')), "Comma", ctx$op.value('Separator'))
-  
-  
   evt = TaskProgressEvent$new()
   evt$taskId = task$id
   evt$total = 1
@@ -108,15 +104,7 @@ do.quant <- function(df, props, docId, imgInfo, totalDoExec){
   
   grd.ImageNameUsed = df$grdImageNameUsed[[1]]
   
-  task = ctx$task
-  actual = get("actual",  envir = .GlobalEnv) + 1
-  assign("actual", actual, envir = .GlobalEnv)
-  evt = TaskProgressEvent$new()
-  evt$taskId = task$id
-  evt$total = totalDoExec
-  evt$actual = actual
-  evt$message = paste("Performing quantification: ", actual, "/", totalDoExec, sep ="")
-  ctx$client$eventService$sendChannel(task$channelId, evt)
+
   
   
   # JUst need the image used for gridding, so we get the table from that
@@ -210,8 +198,7 @@ do.quant <- function(df, props, docId, imgInfo, totalDoExec){
   
   
   # Filter by a single variable here with filter
-  # %>% filter(variable == "grdXOffset")
-  inTable = df  %>% select(.ci, spotCol, spotRow, Image)
+  inTable = df  %>% select(.ci, spotCol, spotRow, Image) %>% filter(.ri == 0 )
   
   quantOutput =  quantOutput %>% 
     rename(spotCol = Column) %>%
@@ -220,10 +207,18 @@ do.quant <- function(df, props, docId, imgInfo, totalDoExec){
   
 
   quantOutput = quantOutput %>% left_join(inTable, by=c("spotCol", "spotRow", "Image")) %>%
-    select(-spotCol, -spotRow, Image) %>%
+    select(-spotCol, -spotRow, -Image) %>%
     mutate(across(where(is.numeric), as.double))
   
-  
+  task = ctx$task
+  actual = get("actual",  envir = .GlobalEnv) + 1
+  assign("actual", actual, envir = .GlobalEnv)
+  evt = TaskProgressEvent$new()
+  evt$taskId = task$id
+  evt$total = totalDoExec
+  evt$actual = actual
+  evt$message = paste("Performing quantification: ", actual, "/", totalDoExec, sep ="")
+  ctx$client$eventService$sendChannel(task$channelId, evt)
   
   return(quantOutput)
 }
@@ -300,9 +295,34 @@ assign("actual", 0, envir = .GlobalEnv)
 
 totalDoExec <- length(unique(pull(qtTable, "grdImageNameUsed")))
 
+
+
+# SETTING up parallel processing
+nCores <- parallel::detectCores()
+cluster <- new_cluster( nCores -2)
+
+# Copy function to cluster
+cluster_copy(cluster, "do.quant")    
+
+cluster_copy(cluster, "remove_variable_ns")    
+
+cluster_assign(cluster, LIBPATH= LIBPATH)    
+
+cluster_assign(cluster, props= props)    
+cluster_assign(cluster, imgInfo=imgInfo)    
+cluster_assign(cluster, docId=docId)
+cluster_assign(cluster, totalDoExec=totalDoExec)    
+
+cluster_library(cluster, "tercen")
+cluster_library(cluster, "dplyr")
+cluster_library(cluster, "stringr")
+cluster_library(cluster, "jsonlite")
+
 qtTable %>% 
   group_by(grdImageNameUsed)   %>%
+  partition(cluster = cluster) %>%
   do(do.quant(., props, docId, imgInfo, totalDoExec))  %>%
+  collect() %>%
   ctx$addNamespace() %>%
   ctx$save() 
 
