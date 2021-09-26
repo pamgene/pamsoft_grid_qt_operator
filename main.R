@@ -4,8 +4,6 @@ library(dplyr)
 library(stringr)
 library(jsonlite)
 
-library(multidplyr)
-
 get_operator_props <- function(ctx, imagesFolder){
   sqcMinDiameter <- -1
   grdSpotPitch   <- -1
@@ -246,7 +244,6 @@ do.quant <- function(df, props, docId, imgInfo, totalDoExec){
 #Sys.setenv( "LD_LIBRARY_PATH" = LIBPATH )
 # ---------------------------------------
 # END MCR Path setting
-# MAke it parallel https://multidplyr.tidyverse.org/articles/multidplyr.html
 
 ctx = tercenCtx()
 
@@ -296,33 +293,9 @@ assign("actual", 0, envir = .GlobalEnv)
 totalDoExec <- length(unique(pull(qtTable, "grdImageNameUsed")))
 
 
-
-# SETTING up parallel processing
-nCores <- parallel::detectCores()
-cluster <- new_cluster( nCores -2)
-
-# Copy function to cluster
-cluster_copy(cluster, "do.quant")    
-
-cluster_copy(cluster, "remove_variable_ns")    
-
-#cluster_assign(cluster, LIBPATH=LIBPATH)    
-
-cluster_assign(cluster, props= props)    
-cluster_assign(cluster, imgInfo=imgInfo)    
-cluster_assign(cluster, docId=docId)
-cluster_assign(cluster, totalDoExec=totalDoExec)    
-
-cluster_library(cluster, "tercen")
-cluster_library(cluster, "dplyr")
-cluster_library(cluster, "stringr")
-cluster_library(cluster, "jsonlite")
-
 qtTable %>% 
   group_by(grdImageNameUsed)   %>%
-  partition(cluster = cluster) %>%
   do(do.quant(., props, docId, imgInfo, totalDoExec))  %>%
-  collect() %>%
   ctx$addNamespace() %>%
   ctx$save() 
 
