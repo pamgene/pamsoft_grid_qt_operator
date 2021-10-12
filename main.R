@@ -201,13 +201,14 @@ do.quant <- function(df, props, docId, imgInfo, totalDoExec){
   quantOutput =  quantOutput %>% 
     rename(spotCol = Column) %>%
     rename(spotRow = Row) %>%
-    rename(Image = ImageName)
+    rename(Image = ImageName) %>%
+    mutate(across(where(is.numeric), as.double))
   
 
   quantOutput = quantOutput %>% left_join(inTable, by=c("spotCol", "spotRow", "Image")) %>%
-    select(-spotCol, -spotRow, -Image) %>%
-    mutate(across(where(is.numeric), as.double))
+    select(-spotCol, -spotRow, -Image) 
   
+
   task = ctx$task
   actual = get("actual",  envir = .GlobalEnv) + 1
   assign("actual", actual, envir = .GlobalEnv)
@@ -217,6 +218,9 @@ do.quant <- function(df, props, docId, imgInfo, totalDoExec){
   evt$actual = actual
   evt$message = paste("Performing quantification: ", actual, "/", totalDoExec, sep ="")
   ctx$client$eventService$sendChannel(task$channelId, evt)
+  
+  
+  
   
   return(quantOutput)
 }
