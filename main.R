@@ -207,12 +207,9 @@ do.quant <- function(df, props, docId, imgInfo){
   
   write(jsonData, jsonFile)
   
-  
-  
 
   MCR_PATH <- "/opt/mcr/v99"
-  
-  
+
   if( file.exists("/mcr/exe/run_pamsoft_grid.sh") ){
     system(paste("/mcr/exe/run_pamsoft_grid.sh ", 
                  MCR_PATH,
@@ -252,6 +249,7 @@ do.quant <- function(df, props, docId, imgInfo){
 
   quantOutput = quantOutput %>% left_join(inTable, by=c("spotCol", "spotRow", "Image")) %>%
     select(-spotCol, -spotRow, -Image, -.ri) 
+  
   
 
   return(quantOutput)
@@ -337,9 +335,11 @@ ctx$client$eventService$sendChannel(task$channelId, evt)
 
 qtTable %>% 
   group_by(grdImageNameUsed)   %>%
-  #partition(cluster = cluster) %>%
+  partition(cluster = cluster) %>%
   do(do.quant(., props, docId, imgInfo))  %>%
-  #collect() %>%
+  collect() %>%
+  ungroup() %>% 
+  select(-grdImageNameUsed) %>%
   ctx$addNamespace() %>%
   ctx$save() 
 
