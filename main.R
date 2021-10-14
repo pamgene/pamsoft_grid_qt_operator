@@ -247,7 +247,7 @@ do.quant <- function(df, props, docId, imgInfo){
   
 
   quantOutput = quantOutput %>% left_join(inTable, by=c("spotCol", "spotRow", "Image")) %>%
-    select(-spotCol, -spotRow, -Image, -grdImageUsed, -.ri) 
+    select(-spotCol, -spotRow, -Image, -grdImageNameUsed, -.ri) 
   
 
   return(quantOutput)
