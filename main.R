@@ -247,7 +247,7 @@ do.quant <- function(df, props, docId, imgInfo){
   
 
   quantOutput = quantOutput %>% left_join(inTable, by=c("spotCol", "spotRow", "Image")) %>%
-    select(-spotCol, -spotRow, -Image) 
+    select(-spotCol, -spotRow, -Image, -grdImageUsed, -.ri) 
   
 
   return(quantOutput)
@@ -318,7 +318,6 @@ cluster_assign(cluster, props= props)
 cluster_assign(cluster, imgInfo=imgInfo)    
 cluster_assign(cluster, docId=docId)
 
-cluster_library(cluster, "tercen")
 cluster_library(cluster, "dplyr")
 cluster_library(cluster, "stringr")
 cluster_library(cluster, "jsonlite")
@@ -328,8 +327,8 @@ cluster_library(cluster, "jsonlite")
 task = ctx$task
 evt = TaskProgressEvent$new()
 evt$taskId = task$id
-evt$total = 0
-evt$actual = 1
+evt$total = 1
+evt$actual = 0
 evt$message = "Performing quantification... Please wait"
 ctx$client$eventService$sendChannel(task$channelId, evt)
 
