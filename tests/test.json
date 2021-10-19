@@ -6,7 +6,7 @@
   "inputDataUri": "input.csv",
   "outputDataUri": ["table_1.csv","table_2.csv"],
   "columns": ["documentId","ds3.grdImageNameUsed","ds0.Image","ds3.spotRow","ds3.spotCol","ds3.ID"],
-  "rows": [],
+  "rows": ["gs0.variable"],
   "colors": [],
   "labels": [],
   "yAxis": "gs0.value",
