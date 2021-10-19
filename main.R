@@ -303,7 +303,6 @@ rTable[[".ri"]] = seq(0, nrow(rTable)-1)
 
 qtTable = dplyr::left_join(qtTable,rTable,by=".ri")
 
-totalDoExec <- length(unique(pull(qtTable, "grdImageNameUsed")))
 
 
 

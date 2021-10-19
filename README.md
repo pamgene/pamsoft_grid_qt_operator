@@ -1,7 +1,7 @@
 # pamsoft_grid_operator
 
 ```shell
-docker build -t tercen/pamsoft_grid_operator .
+docker build -t tercen/pamsoft_grid_qt_operator .
 ```
 
 

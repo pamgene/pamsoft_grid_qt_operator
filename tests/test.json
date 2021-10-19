@@ -1,0 +1,14 @@
+{
+  "kind": "OperatorUnitTest",
+  "name": "test",
+  "namespace": "ds4",
+  "inputFileUris": ["pg_data.zip"],
+  "inputDataUri": "input.csv",
+  "outputDataUri": ["table1.csv","table2.csv", "table3.csv"],
+  "columns": ["grdImageNameUsed","Mean_SigmBg","Median_SigmBg","Rse_MedianSigmBg","Mean_Signal","Median_Signal","Std_Signal","Sum_Signal","Rse_Signal","Mean_Background","Median_Background","Std_Background","Sum_Background","Rse_Background","Signal_Saturation","Fraction_Ignored","Diameter","X_Position","Y_Position","Position_Offset","Empty_Spot","Bad_Spot","Replaced_Spot",".ci",".ri"],
+  "rows": [],
+  "colors": [],
+  "labels": [],
+  "yAxis": "gs0.value",
+  "xAxis": ""
+}
