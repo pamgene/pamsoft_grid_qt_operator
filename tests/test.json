@@ -5,7 +5,7 @@
   "inputFileUris": ["pg_data.zip"],
   "inputDataUri": "input.csv",
   "outputDataUri": ["table_1.csv","table_2.csv"],
-  "columns": ["Mean_SigmBg","Median_SigmBg","Rse_MedianSigmBg","Mean_Signal","Median_Signal","Std_Signal","Sum_Signal","Rse_Signal","Mean_Background","Median_Background","Std_Background","Sum_Background","Rse_Background","Signal_Saturation","Fraction_Ignored","Diameter","X_Position","Y_Position","Position_Offset","Empty_Spot","Bad_Spot","Replaced_Spot",".ci"],
+  "columns": ["documentId","ds3.grdImageNameUsed","ds0.Image","ds3.spotRow","ds3.spotCol","ds3.ID","gs0.variable","gs0.value"],
   "rows": ["gs0.variable"],
   "colors": [],
   "labels": [],
