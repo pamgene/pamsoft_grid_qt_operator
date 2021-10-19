@@ -9,6 +9,6 @@
   "rows": [],
   "colors": [],
   "labels": [],
-  "yAxis": "",
+  "yAxis": "gs0.value",
   "xAxis": ""
 }
