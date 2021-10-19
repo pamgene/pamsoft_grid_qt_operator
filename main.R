@@ -339,6 +339,7 @@ qtTable %>%
   collect() %>%
   ungroup() %>% 
   select(-grdImageNameUsed) %>%
+  arrange(.ci) %>%
   ctx$addNamespace() %>%
   ctx$save() 
 
