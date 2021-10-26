@@ -9,9 +9,9 @@ library(processx)
 
 
 
-run_quantification <- function(grdImageNameUsed, props, docId, imgInfo){
+run_quantification <- function(grdImageNameUsed, props, docId, imgInfo, tmpDir){
   grd.ImageNameUsed = grdImageNameUsed
-  baseFilename <- paste0( tempdir(), "/", grd.ImageNameUsed, "_")
+  baseFilename <- paste0( tmpDir, "/", grd.ImageNameUsed, "_")
   jsonFile <- paste0(baseFilename, '_param.json')
   
   
@@ -154,7 +154,7 @@ prep_image_folder <- function(docId){
 }
 
 
-prep_quant_files <- function(df, props, docId, imgInfo, grp){
+prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir){
   sqcMinDiameter       <- as.numeric(props$sqcMinDiameter) #0.45
   segEdgeSensitivity   <- list(0, 0.01)
   qntSeriesMode        <- 0
@@ -166,7 +166,7 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp){
   dbgShowPresenter     <- "no"
   #-----------------------------------------------
   # END of property setting
-  baseFilename <- paste0( tempdir(), "/", grp, "_")
+  baseFilename <- paste0( tmpDir, "/", grp, "_")
   grd.ImageNameUsed = grp #df$grdImageNameUsed[[1]]
   
   
@@ -255,9 +255,9 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp){
 }
 
 
-do.readout <- function(df ){
+do.readout <- function(df, tmpDir ){
   grd.ImageNameUsed = df$grdImageNameUsed[1]
-  baseFilename <- paste0( tempdir(), "/", grd.ImageNameUsed, "_")
+  baseFilename <- paste0( tmpDir, "/", grd.ImageNameUsed, "_")
   jsonFile <- paste0(baseFilename, '_param.json')
   
   grd.ImageNameUsed = df$grdImageNameUsed[[1]]
@@ -359,10 +359,12 @@ if(!is.null(task)){
   evt$taskId = task$id
 }
 
+tmpDir <- tempdir()
+
 # Preparation step
 qtTable %>% 
   group_by(grdImageNameUsed)   %>%
-  group_walk(~ prep_quant_files(.x, props, docId, imgInfo, .y) ) 
+  group_walk(~ prep_quant_files(.x, props, docId, imgInfo, .y, tmpDir) ) 
 
 
 groups <- unique(qtTable$grdImageNameUsed)
@@ -373,7 +375,7 @@ totalExec <- length(groups)
 
 # Run pamsoft_grid in the background
 for( i in seq_along(groups)){
-  p <- run_quantification(groups[i], props, docId, imgInfo)
+  p <- run_quantification(groups[i], props, docId, imgInfo, tmpDir)
 
   procs <- append( procs, p )
   isFinished <- append( isFinished, FALSE )
@@ -414,7 +416,7 @@ while( !all(isFinished == TRUE)){
 # Collect results
 qtTable %>% 
   group_by(grdImageNameUsed)   %>%
-  do(do.readout(.)) %>%
+  do(do.readout(.,tmpDir)) %>%
   select(-grdImageNameUsed) %>%
   arrange(.ci) %>%
   ctx$addNamespace() %>%
