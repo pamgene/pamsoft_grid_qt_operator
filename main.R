@@ -16,9 +16,11 @@ run_quantification <- function(grdImageNameUsed, props, docId, imgInfo, tmpDir){
   
   
   MCR_PATH <- "/opt/mcr/v99"
+  #MCR_PATH <- "/home/rstudio/mcr/v99"
   
   
   if( file.exists("/mcr/exe/run_pamsoft_grid.sh") ){
+  #if( file.exists("/home/rstudio/pg_exe/run_pamsoft_grid.sh") ){
     #system(paste0("/home/rstudio/pg_exe/run_pamsoft_grid.sh ", 
     #             MCR_PATH,
     #             " \"--param-file=", jsonFile[1], "\"", sep=""))
@@ -417,6 +419,7 @@ while( !all(isFinished == TRUE)){
 qtTable %>% 
   group_by(grdImageNameUsed)   %>%
   do(do.readout(.,tmpDir)) %>%
+  ungroup() %>%
   select(-grdImageNameUsed) %>%
   arrange(.ci) %>%
   ctx$addNamespace() %>%
