@@ -1,4 +1,4 @@
-FROM tercen/pamsoft_grid:1.0.5
+FROM tercen/pamsoft_grid:1.0.6
 
 
 ENV RENV_VERSION 0.9.2
