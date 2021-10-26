@@ -15,14 +15,14 @@ run_quantification <- function(grdImageNameUsed, props, docId, imgInfo){
   jsonFile <- paste0(baseFilename, '_param.json')
   
   
-  MCR_PATH <- "/home/rstudio/mcr/v99"
+  MCR_PATH <- "/opt/mcr/v99"
   
-  if( file.exists("/home/rstudio/pg_exe/run_pamsoft_grid.sh") ){
+  if( file.exists("/mcr/exe/run_pamsoft_grid.sh") ){
     #system(paste0("/home/rstudio/pg_exe/run_pamsoft_grid.sh ", 
     #             MCR_PATH,
     #             " \"--param-file=", jsonFile[1], "\"", sep=""))
     
-    p<-processx::process$new("/home/rstudio/pg_exe/run_pamsoft_grid.sh", 
+    p<-processx::process$new("/mcr/exe/run_pamsoft_grid.sh", 
                              c(MCR_PATH, 
                                paste0("--param-file=", jsonFile[1])),
                              stdout = "|", stderr="|")
@@ -41,8 +41,8 @@ run_quantification <- function(grdImageNameUsed, props, docId, imgInfo){
     LIBPATH <- paste(LIBPATH,MCR_PATH_4, sep = ":")
     
     Sys.setenv( "LD_LIBRARY_PATH" = LIBPATH ) 
-    #system(paste("/mcr/exe/pamsoft_grid \"--param-file=", jsonFile[1], "\"", sep=""))
-    p<-processx::process$new("/home/rstudio/pg_exe/pamsoft_grid", 
+
+    p<-processx::process$new("/mcr/exe/pamsoft_grid", 
                              c(paste0("--param-file=", jsonFile[1])))
   }
   
