@@ -17,6 +17,7 @@ run_quantification <- function(grdImageNameUsed, props, docId, imgInfo){
   
   MCR_PATH <- "/opt/mcr/v99"
   
+  
   if( file.exists("/mcr/exe/run_pamsoft_grid.sh") ){
     #system(paste0("/home/rstudio/pg_exe/run_pamsoft_grid.sh ", 
     #             MCR_PATH,
@@ -303,6 +304,15 @@ do.readout <- function(df ){
 
 ctx = tercenCtx()
 
+task = ctx$task
+
+if(!is.null(task)){
+  evt = TaskProgressEvent$new()
+  evt$taskId = task$id
+  evt$message = "Loading table"
+  ctx$client$eventService$sendChannel(task$channelId, evt)
+}
+
 required.cnames = c("documentId","grdImageNameUsed","Image","spotRow","spotCol","ID")
 required.rnames = c("variable")
 
@@ -344,10 +354,10 @@ rTable[[".ri"]] = seq(0, nrow(rTable)-1)
 qtTable = dplyr::left_join(qtTable,rTable,by=".ri")
 
 
-
-task = ctx$task
-evt = TaskProgressEvent$new()
-evt$taskId = task$id
+if(!is.null(task)){
+  evt = TaskProgressEvent$new()
+  evt$taskId = task$id
+}
 
 # Preparation step
 qtTable %>% 
@@ -373,10 +383,12 @@ for( i in seq_along(groups)){
 nFinished <- 0
 prevFinished <- 0
 
-evt$total = totalExec
-evt$actual = nFinished
-evt$message = "Performing quantification"
-ctx$client$eventService$sendChannel(task$channelId, evt)
+if(!is.null(task)){
+  evt$total = totalExec
+  evt$actual = nFinished
+  evt$message = "Performing quantification"
+  ctx$client$eventService$sendChannel(task$channelId, evt)
+}
 
 while( !all(isFinished == TRUE)){
   for( i in seq_along(procs)){
@@ -388,7 +400,7 @@ while( !all(isFinished == TRUE)){
   
   nFinished <- sum(as.numeric(isFinished)==TRUE)
   
-  if( nFinished != prevFinished ){
+  if( nFinished != prevFinished && !is.null(task)){
     evt$total = totalExec
     evt$actual = nFinished
     evt$message = "Performing quantification"
