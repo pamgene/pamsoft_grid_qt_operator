@@ -286,7 +286,7 @@ do.readout <- function(df ){
   jsonFile <- paste0(baseFilename, '_param.json')
   gridfile <- paste0(baseFilename, '_grid.txt')
   
-  unlink(gridFile)
+  unlink(gridfile)
   unlink(jsonFile)
   unlink(outputfile)
   
