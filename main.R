@@ -1,4 +1,5 @@
 library(tercen)
+library(plyr)
 library(dplyr)
 
 library(stringr)
@@ -8,6 +9,105 @@ library(jsonlite)
 library(processx)
 
 
+do.quant <- function(df, tmpDir){
+  grpCluster <- unique(df$grdImageNameUsed)
+  
+  
+  actual = get("actual",  envir = .GlobalEnv) + 1
+  total = get("total",  envir = .GlobalEnv) 
+
+  assign("actual", actual, envir = .GlobalEnv)
+  
+  if(!is.null(task)){
+    evt = TaskProgressEvent$new()
+    evt$taskId = task$id
+    evt$message = paste0("Performing quantification (",  as.integer(100*(actual/2)/total),"%)")
+    ctx$client$eventService$sendChannel(task$channelId, evt)
+  }
+  
+  
+  procList <- list()
+  for(grp in grpCluster)
+  {
+    
+    baseFilename <- paste0( tmpDir, "/", grp, "_")
+    jsonFile <- paste0(baseFilename, '_param.json')
+
+    #MCR_PATH <- "/home/rstudio/mcr/v99"
+    MCR_PATH <- "/opt/mcr/v99"
+    
+    p<-processx::process$new("/mcr/exe/run_pamsoft_grid.sh", 
+                             c(MCR_PATH, 
+                               paste0("--param-file=", jsonFile[1])),
+                             stdout = "|", stderr="|")
+    
+    procList <- append( procList, p )
+  }
+  
+  
+  # Wait for all processes to finish
+  for(p in procList)
+  {
+    # Wait for 10 minutes then times out
+    p$wait(timeout = 1000 * 60 * 10)
+  }
+  
+  
+  outDf <- NULL
+  
+  for(grp in grpCluster)
+  {
+    grd.ImageNameUsed = grp
+    baseFilename <- paste0( tmpDir, "/", grd.ImageNameUsed, "_")
+    jsonFile <- paste0(baseFilename, '_param.json')
+    
+    # The rest of the code should be very similar
+    outputfile <- paste0(baseFilename, "_out.txt") 
+    
+    
+    quantOutput <- read.csv(outputfile, header = TRUE)
+    nGrid       <- nrow(quantOutput)
+    
+
+    inDf <- df %>% filter(grdImageNameUsed == grp)
+    
+    # Filter by a single variable here with filter
+    inTable = inDf  %>% select(.ci, .ri, spotCol, spotRow, Image) %>% filter(.ri == 0 )
+    
+    quantOutput =  quantOutput %>% 
+      rename(spotCol = Column) %>%
+      rename(spotRow = Row) %>%
+      rename(Image = ImageName) %>%
+      mutate(across(where(is.numeric), as.double))
+    
+    
+    quantOutput = quantOutput %>% left_join(inTable, by=c("spotCol", "spotRow", "Image")) %>%
+      select(-spotCol, -spotRow, -Image, -.ri) 
+    
+    if(is.null(outDf)){
+      outDf <- quantOutput
+    }else{
+      outDf <- rbind(outDf, quantOutput)
+    }
+    
+    # Clean up
+    jsonFile <- paste0(baseFilename, '_param.json')
+    gridfile <- paste0(baseFilename, '_grid.txt')
+    
+    unlink(gridfile)
+    unlink(jsonFile)
+    unlink(outputfile)
+  }
+  
+  if(!is.null(task)){
+    evt = TaskProgressEvent$new()
+    evt$taskId = task$id
+    evt$message = paste0("Performing quantification (",  as.integer(100*(actual)/total),"%)")
+    ctx$client$eventService$sendChannel(task$channelId, evt)
+  }
+  
+  return(outDf)
+}
 
 run_quantification <- function(grdImageNameUsed, props, docId, imgInfo, tmpDir){
   grd.ImageNameUsed = grdImageNameUsed
@@ -15,17 +115,17 @@ run_quantification <- function(grdImageNameUsed, props, docId, imgInfo, tmpDir){
   jsonFile <- paste0(baseFilename, '_param.json')
   
   
-  MCR_PATH <- "/opt/mcr/v99"
-  #MCR_PATH <- "/home/rstudio/mcr/v99"
+  #MCR_PATH <- "/opt/mcr/v99"
+  MCR_PATH <- "/home/rstudio/mcr/v99"
   
   
-  if( file.exists("/mcr/exe/run_pamsoft_grid.sh") ){
-  #if( file.exists("/home/rstudio/pg_exe/run_pamsoft_grid.sh") ){
+  #if( file.exists("/mcr/exe/run_pamsoft_grid.sh") ){
+  if( file.exists("/home/rstudio/pg_exe/run_pamsoft_grid.sh") ){
     #system(paste0("/home/rstudio/pg_exe/run_pamsoft_grid.sh ", 
     #             MCR_PATH,
     #             " \"--param-file=", jsonFile[1], "\"", sep=""))
     
-    p<-processx::process$new("/mcr/exe/run_pamsoft_grid.sh", 
+    p<-processx::process$new("/home/rstudio/pg_exe/run_pamsoft_grid.sh", 
                              c(MCR_PATH, 
                                paste0("--param-file=", jsonFile[1])),
                              stdout = "|", stderr="|")
@@ -300,9 +400,11 @@ do.readout <- function(df, tmpDir ){
 # MAIN OPERATOR CODE
 # =====================
 #http://127.0.0.1:5402/admin/w/378f18ac66a21562f6dc43c28401df71/ds/da68ad6d-2fbd-4a72-903c-68ce84607991
-#options("tercen.workflowId" = "378f18ac66a21562f6dc43c28401df71")
-#options("tercen.stepId"     = "da68ad6d-2fbd-4a72-903c-68ce84607991")
+options("tercen.workflowId" = "378f18ac66a21562f6dc43c28401df71")
+options("tercen.stepId"     = "da68ad6d-2fbd-4a72-903c-68ce84607991")
 
+actual <- 0
+assign("actual", actual, envir = .GlobalEnv)
 
 ctx = tercenCtx()
 
@@ -363,67 +465,62 @@ if(!is.null(task)){
 
 tmpDir <- tempdir()
 
+
+# Prepare processor queu
+groups <- unique(qtTable$grdImageNameUsed)
+nCores <- parallel::detectCores()
+queu <- list()
+
+currentCore <- 1
+order <- 1
+k <- 1
+
+while(k <= length(groups)){
+  for(i in 1:nCores){
+    queu <- append( queu, order )
+    k <- k + 1
+    if( k > length(groups)){break}
+  }
+  order <- order + 1
+}
+
+
+assign("total", max(queu), envir = .GlobalEnv)
+
+
+if(!is.null(task)){
+  evt = TaskProgressEvent$new()
+  evt$taskId = task$id
+  evt$message = "Loading grid data"
+  ctx$client$eventService$sendChannel(task$channelId, evt)
+}
+qtTable$queu <- mapvalues(qtTable$grdImageNameUsed, 
+                               from=groups, 
+                               to=unlist(queu) )
+
 # Preparation step
 qtTable %>% 
   group_by(grdImageNameUsed)   %>%
   group_walk(~ prep_quant_files(.x, props, docId, imgInfo, .y, tmpDir) ) 
 
 
-groups <- unique(qtTable$grdImageNameUsed)
-procs <- list()
-isFinished <- list()
-totalExec <- length(groups)
-
-
-# Run pamsoft_grid in the background
-for( i in seq_along(groups)){
-  p <- run_quantification(groups[i], props, docId, imgInfo, tmpDir)
-
-  procs <- append( procs, p )
-  isFinished <- append( isFinished, FALSE )
-}
-
-# Wait all processes to end and print progress message
-nFinished <- 0
-prevFinished <- 0
-
 if(!is.null(task)){
-  evt$total = totalExec
-  evt$actual = nFinished
-  evt$message = "Performing quantification"
+  evt = TaskProgressEvent$new()
+  evt$taskId = task$id
+  evt$message = "Performing quantification (0%)"
   ctx$client$eventService$sendChannel(task$channelId, evt)
 }
 
-while( !all(isFinished == TRUE)){
-  for( i in seq_along(procs)){
-    p<-procs[[i]]
-    if( p$is_alive()  == FALSE ){
-      isFinished[i] <- TRUE
-    }
-  }
-  
-  nFinished <- sum(as.numeric(isFinished)==TRUE)
-  
-  if( nFinished != prevFinished && !is.null(task)){
-    evt$total = totalExec
-    evt$actual = nFinished
-    evt$message = "Performing quantification"
-    ctx$client$eventService$sendChannel(task$channelId, evt)
-    prevFinished <- nFinished
-  }
-  
-}
-
-
-# Collect results
-qtTable %>% 
-  group_by(grdImageNameUsed)   %>%
-  do(do.readout(.,tmpDir)) %>%
+# Execution step
+outTable <-qtTable %>% 
+  group_by(queu)   %>%
+  do(do.quant(., tmpDir)  ) %>%
   ungroup() %>%
-  select(-grdImageNameUsed) %>%
+  select(-queu) %>%
   arrange(.ci) %>%
   ctx$addNamespace() %>%
   ctx$save() 
+
 
 
 
