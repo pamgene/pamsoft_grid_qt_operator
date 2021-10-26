@@ -4,7 +4,52 @@ library(dplyr)
 library(stringr)
 library(jsonlite)
 
-library(multidplyr)
+
+library(processx)
+
+
+
+run_quantification <- function(grdImageNameUsed, props, docId, imgInfo){
+  grd.ImageNameUsed = grdImageNameUsed
+  baseFilename <- paste0( tempdir(), "/", grd.ImageNameUsed, "_")
+  jsonFile <- paste0(baseFilename, '_param.json')
+  
+  
+  MCR_PATH <- "/home/rstudio/mcr/v99"
+  
+  if( file.exists("/home/rstudio/pg_exe/run_pamsoft_grid.sh") ){
+    #system(paste0("/home/rstudio/pg_exe/run_pamsoft_grid.sh ", 
+    #             MCR_PATH,
+    #             " \"--param-file=", jsonFile[1], "\"", sep=""))
+    
+    p<-processx::process$new("/home/rstudio/pg_exe/run_pamsoft_grid.sh", 
+                             c(MCR_PATH, 
+                               paste0("--param-file=", jsonFile[1])),
+                             stdout = "|", stderr="|")
+  }else{
+    # Set LD_LIBRARY_PATH environment variable to speed calling pamsoft_grid multiple times
+    LIBPATH <- "."
+    
+    MCR_PATH_1 <- paste(MCR_PATH, "runtime", "glnxa64", sep = "/")
+    MCR_PATH_2 <- paste(MCR_PATH, "bin", "glnxa64", sep = "/")
+    MCR_PATH_3 <- paste(MCR_PATH, "sys", "os", "glnxa64", sep = "/")
+    MCR_PATH_4 <- paste(MCR_PATH, "sys", "opengl", "lib", "glnxa64", sep = "/")
+    
+    LIBPATH <- paste(LIBPATH,MCR_PATH_1, sep = ":")
+    LIBPATH <- paste(LIBPATH,MCR_PATH_2, sep = ":")
+    LIBPATH <- paste(LIBPATH,MCR_PATH_3, sep = ":")
+    LIBPATH <- paste(LIBPATH,MCR_PATH_4, sep = ":")
+    
+    Sys.setenv( "LD_LIBRARY_PATH" = LIBPATH ) 
+    #system(paste("/mcr/exe/pamsoft_grid \"--param-file=", jsonFile[1], "\"", sep=""))
+    p<-processx::process$new("/home/rstudio/pg_exe/pamsoft_grid", 
+                             c(paste0("--param-file=", jsonFile[1])))
+  }
+  
+  
+  return(p)
+  
+}
 
 get_operator_props <- function(ctx, imagesFolder){
   sqcMinDiameter <- -1
@@ -108,7 +153,7 @@ prep_image_folder <- function(docId){
 }
 
 
-do.quant <- function(df, props, docId, imgInfo){
+prep_quant_files <- function(df, props, docId, imgInfo, grp){
   sqcMinDiameter       <- as.numeric(props$sqcMinDiameter) #0.45
   segEdgeSensitivity   <- list(0, 0.01)
   qntSeriesMode        <- 0
@@ -120,10 +165,10 @@ do.quant <- function(df, props, docId, imgInfo){
   dbgShowPresenter     <- "no"
   #-----------------------------------------------
   # END of property setting
+  baseFilename <- paste0( tempdir(), "/", grp, "_")
+  grd.ImageNameUsed = grp #df$grdImageNameUsed[[1]]
   
-  grd.ImageNameUsed = df$grdImageNameUsed[[1]]
   
-
   # JUst need the image used for gridding, so we get the table from that
   gridImageUsedTable = df %>% filter(Image == grd.ImageNameUsed)
   gridImageUsedTable$variable = sapply(gridImageUsedTable$variable, remove_variable_ns)
@@ -177,15 +222,15 @@ do.quant <- function(df, props, docId, imgInfo){
   )
   
   
-  gridfile <- tempfile(fileext=".txt") 
-  on.exit(unlink(gridfile))
+  gridfile <- paste0(baseFilename, '_grid.txt') #tempfile(fileext=".txt") 
+  #on.exit(unlink(gridfile))
   
   
   write.table(dfGrid, gridfile, quote=FALSE,sep=",", row.names = FALSE)
   
   # The rest of the code should be very similar
-  outputfile <- tempfile(fileext=".txt") 
-  on.exit(unlink(outputfile))
+  outputfile <- paste0(baseFilename, '_out.txt') #tempfile(fileext=".txt") 
+  #on.exit(unlink(outputfile))
   
   dfJson = list("sqcMinDiameter"=sqcMinDiameter, 
                 "segEdgeSensitivity"=segEdgeSensitivity,
@@ -202,35 +247,22 @@ do.quant <- function(df, props, docId, imgInfo){
   
   jsonData <- toJSON(dfJson, pretty=TRUE, auto_unbox = TRUE)
   
-  jsonFile <- tempfile(fileext = ".json")
-  on.exit(unlink(jsonFile))
+  jsonFile <- paste0(baseFilename, '_param.json') #tempfile(fileext = ".json")
+  #on.exit(unlink(jsonFile))
   
   write(jsonData, jsonFile)
+}
+
+
+do.readout <- function(df ){
+  grd.ImageNameUsed = df$grdImageNameUsed[1]
+  baseFilename <- paste0( tempdir(), "/", grd.ImageNameUsed, "_")
+  jsonFile <- paste0(baseFilename, '_param.json')
   
-
-  MCR_PATH <- "/opt/mcr/v99"
-
-  if( file.exists("/mcr/exe/run_pamsoft_grid.sh") ){
-    system(paste("/mcr/exe/run_pamsoft_grid.sh ", 
-                 MCR_PATH,
-                 " \"--param-file=", jsonFile[1], "\"", sep=""))
-  }else{
-    # Set LD_LIBRARY_PATH environment variable to speed calling pamsoft_grid multiple times
-    LIBPATH <- "."
-    
-    MCR_PATH_1 <- paste(MCR_PATH, "runtime", "glnxa64", sep = "/")
-    MCR_PATH_2 <- paste(MCR_PATH, "bin", "glnxa64", sep = "/")
-    MCR_PATH_3 <- paste(MCR_PATH, "sys", "os", "glnxa64", sep = "/")
-    MCR_PATH_4 <- paste(MCR_PATH, "sys", "opengl", "lib", "glnxa64", sep = "/")
-    
-    LIBPATH <- paste(LIBPATH,MCR_PATH_1, sep = ":")
-    LIBPATH <- paste(LIBPATH,MCR_PATH_2, sep = ":")
-    LIBPATH <- paste(LIBPATH,MCR_PATH_3, sep = ":")
-    LIBPATH <- paste(LIBPATH,MCR_PATH_4, sep = ":")
-    
-    Sys.setenv( "LD_LIBRARY_PATH" = LIBPATH ) 
-    system(paste("/mcr/exe/pamsoft_grid \"--param-file=", jsonFile[1], "\"", sep=""))
-  }
+  grd.ImageNameUsed = df$grdImageNameUsed[[1]]
+  
+  # The rest of the code should be very similar
+  outputfile <- paste0(baseFilename, "_out.txt") #tempfile(fileext=".txt") 
   
   
   quantOutput <- read.csv(outputfile, header = TRUE)
@@ -246,21 +278,29 @@ do.quant <- function(df, props, docId, imgInfo){
     rename(Image = ImageName) %>%
     mutate(across(where(is.numeric), as.double))
   
-
+  
   quantOutput = quantOutput %>% left_join(inTable, by=c("spotCol", "spotRow", "Image")) %>%
     select(-spotCol, -spotRow, -Image, -.ri) 
   
+  # Clean up
+  jsonFile <- paste0(baseFilename, '_param.json')
+  gridfile <- paste0(baseFilename, '_grid.txt')
   
-
+  unlink(gridFile)
+  unlink(jsonFile)
+  unlink(outputfile)
+  
   return(quantOutput)
 }
-
-
-
 
 # =====================
 # MAIN OPERATOR CODE
 # =====================
+#http://127.0.0.1:5402/admin/w/378f18ac66a21562f6dc43c28401df71/ds/da68ad6d-2fbd-4a72-903c-68ce84607991
+#options("tercen.workflowId" = "378f18ac66a21562f6dc43c28401df71")
+#options("tercen.stepId"     = "da68ad6d-2fbd-4a72-903c-68ce84607991")
+
+
 ctx = tercenCtx()
 
 required.cnames = c("documentId","grdImageNameUsed","Image","spotRow","spotCol","ID")
@@ -305,41 +345,70 @@ qtTable = dplyr::left_join(qtTable,rTable,by=".ri")
 
 
 
-
-# SETTING up parallel processing
-nCores <- parallel::detectCores()
-cluster <- new_cluster(nCores)
-
-
-cluster_copy(cluster, "do.quant")
-cluster_copy(cluster, "remove_variable_ns")    
-
-cluster_assign(cluster, props= props)    
-cluster_assign(cluster, imgInfo=imgInfo)    
-cluster_assign(cluster, docId=docId)
-
-cluster_library(cluster, "dplyr")
-cluster_library(cluster, "stringr")
-cluster_library(cluster, "jsonlite")
-
-
-
 task = ctx$task
 evt = TaskProgressEvent$new()
 evt$taskId = task$id
-evt$total = 1
-evt$actual = 0
-evt$message = "Performing quantification... Please wait"
-ctx$client$eventService$sendChannel(task$channelId, evt)
 
+# Preparation step
 qtTable %>% 
   group_by(grdImageNameUsed)   %>%
-  partition(cluster = cluster) %>%
-  do(do.quant(., props, docId, imgInfo))  %>%
-  collect() %>%
-  ungroup() %>% 
+  group_walk(~ prep_quant_files(.x, props, docId, imgInfo, .y) ) 
+
+
+groups <- unique(qtTable$grdImageNameUsed)
+procs <- list()
+isFinished <- list()
+totalExec <- length(groups)
+
+
+# Run pamsoft_grid in the background
+for( i in seq_along(groups)){
+  p <- run_quantification(groups[i], props, docId, imgInfo)
+
+  procs <- append( procs, p )
+  isFinished <- append( isFinished, FALSE )
+}
+
+# Wait all processes to end and print progress message
+nFinished <- 0
+prevFinished <- 0
+
+evt$total = totalExec
+evt$actual = nFinished
+evt$message = "Performing quantification"
+ctx$client$eventService$sendChannel(task$channelId, evt)
+
+while( !all(isFinished == TRUE)){
+  for( i in seq_along(procs)){
+    p<-procs[[i]]
+    if( p$is_alive()  == FALSE ){
+      isFinished[i] <- TRUE
+    }
+  }
+  
+  nFinished <- sum(as.numeric(isFinished)==TRUE)
+  
+  if( nFinished != prevFinished ){
+    evt$total = totalExec
+    evt$actual = nFinished
+    evt$message = "Performing quantification"
+    ctx$client$eventService$sendChannel(task$channelId, evt)
+    prevFinished <- nFinished
+  }
+  
+}
+
+
+# Collect results
+qtTable %>% 
+  group_by(grdImageNameUsed)   %>%
+  do(do.readout(.)) %>%
   select(-grdImageNameUsed) %>%
   arrange(.ci) %>%
   ctx$addNamespace() %>%
   ctx$save() 
 
+
+
+  
+  
