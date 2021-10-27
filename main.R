@@ -130,10 +130,10 @@ do.quant <- function(df, tmpDir){
     baseFilename <- paste0( tmpDir, "/", grp, "_")
     jsonFile <- paste0(baseFilename, '_param.json')
 
-    MCR_PATH <- "/home/rstudio/mcr/v99"
-    #MCR_PATH <- "/opt/mcr/v99"
+    #MCR_PATH <- "/home/rstudio/mcr/v99"
+    MCR_PATH <- "/opt/mcr/v99"
     
-    p<-processx::process$new("/home/rstudio/pg_exe/run_pamsoft_grid.sh", 
+    p<-processx::process$new("/mcr/exe/run_pamsoft_grid.sh", 
                              c(MCR_PATH, 
                                paste0("--param-file=", jsonFile[1])),
                              stdout = "|", stderr="|")
