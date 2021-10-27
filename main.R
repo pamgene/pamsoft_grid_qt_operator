@@ -21,6 +21,8 @@ do.quant <- function(df, tmpDir){
   if(!is.null(task)){
     evt = TaskProgressEvent$new()
     evt$taskId = task$id
+    evt$total = total
+    evt$actual = actual/2
     evt$message = paste0("Performing quantification (",  as.integer(100*(actual/2)/total),"%)")
     ctx$client$eventService$sendChannel(task$channelId, evt)
   }
@@ -102,6 +104,8 @@ do.quant <- function(df, tmpDir){
   if(!is.null(task)){
     evt = TaskProgressEvent$new()
     evt$taskId = task$id
+    evt$total = total
+    evt$actual = actual
     evt$message = paste0("Performing quantification (",  as.integer(100*(actual)/total),"%)")
     ctx$client$eventService$sendChannel(task$channelId, evt)
   }
