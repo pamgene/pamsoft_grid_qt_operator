@@ -1,0 +1,16 @@
+{
+  "kind": "OperatorUnitTest",
+  "name": "test",
+  "namespace": "ds4",
+  "inputFileUris": ["pg_data.zip"],
+  "inputDataUri": "input.csv",
+  "outputDataUri": ["table1.csv","table2.csv"],
+  "columns": ["documentId","ds3.grdImageNameUsed","ds0.Image","ds3.spotRow","ds3.spotCol","ds3.ID"],
+  "rows": ["gs0.variable"],
+  "colors": [],
+  "labels": [],
+  "yAxis": "gs0.value",
+  "xAxis": "",
+  "absTol": 1e-15,
+  "relTol": 1e-15
+}
