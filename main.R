@@ -485,7 +485,7 @@ while(k <= length(groups)){
 }
 
 
-assign("total", max(queu), envir = .GlobalEnv)
+assign("total", max(unlist(queu)), envir = .GlobalEnv)
 
 
 if(!is.null(task)){
