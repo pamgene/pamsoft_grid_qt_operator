@@ -114,8 +114,10 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir){
 }
 
 do.quant <- function(df, tmpDir){
-  grpCluster <- unique(df$grdImageNameUsed)
+  ctx = tercenCtx()
+  task = ctx$task
   
+  grpCluster <- unique(df$grdImageNameUsed)
   
   actual = get("actual",  envir = .GlobalEnv) + 1
   total = get("total",  envir = .GlobalEnv) 
@@ -200,7 +202,7 @@ do.quant <- function(df, tmpDir){
     evt$taskId = task$id
     evt$total = total
     evt$actual = actual
-    evt$message = paste0("Performing quantification (",  as.integer(100.0*(actual)/total),"%)")
+    evt$message = paste0("Performing quantification: ",  actual, "/", total)
     ctx$client$eventService$sendChannel(task$channelId, evt)
   }
   
@@ -414,12 +416,14 @@ qtTable %>%
 if(!is.null(task)){
   evt = TaskProgressEvent$new()
   evt$taskId = task$id
-  evt$message = "Performing quantification (0%)"
+  evt$total = max(unlist(queu))
+  evt$actual = 0
+  evt$message = paste0("Performing quantification: ",  actual, "/", total)
   ctx$client$eventService$sendChannel(task$channelId, evt)
 }
 
 # Execution step
-outTable <- qtTable %>% 
+qtTable %>% 
   group_by(queu)   %>%
   do(do.quant(., tmpDir)  ) %>%
   ungroup() %>%
