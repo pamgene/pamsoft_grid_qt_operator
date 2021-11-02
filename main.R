@@ -92,6 +92,12 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir){
   outputfile <- paste0(baseFilename, '_out.txt') #tempfile(fileext=".txt") 
   #on.exit(unlink(outputfile))
   
+  if( length(imageList) > 1){
+    imageList <- unlist(imageList)
+  }else{
+    imageList <- list(imageList)
+  }
+  
   dfJson = list("sqcMinDiameter"=sqcMinDiameter, 
                 "segEdgeSensitivity"=segEdgeSensitivity,
                 "qntSeriesMode"=qntSeriesMode,
@@ -103,7 +109,7 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir){
                 "dbgShowPresenter"=dbgShowPresenter,
                 "arraylayoutfile"=props$arraylayoutfile,
                 "griddingoutputfile"=gridfile,
-                "outputfile"=outputfile, "imageslist"=unlist(imageList))
+                "outputfile"=outputfile, "imageslist"=imageList)
   
   jsonData <- toJSON(dfJson, pretty=TRUE, auto_unbox = TRUE)
   
@@ -132,13 +138,13 @@ do.quant <- function(df, tmpDir){
     baseFilename <- paste0( tmpDir, "/", grp, "_")
     jsonFile <- paste0(baseFilename, '_param.json')
 
-    #MCR_PATH <- "/home/rstudio/mcr/v99"
     MCR_PATH <- "/opt/mcr/v99"
     
+    outLog <- tempfile(fileext = '.log')
     p<-processx::process$new("/mcr/exe/run_pamsoft_grid.sh", 
                              c(MCR_PATH, 
                                paste0("--param-file=", jsonFile[1])),
-                             stdout = "|", stderr="|")
+                             stdout = outLog)
     
     procList <- append( procList, p )
   }
@@ -149,9 +155,13 @@ do.quant <- function(df, tmpDir){
   {
     # Wait for 10 minutes then times out
     p$wait(timeout = 1000 * 60 * 10)
+    exitCode <- p$get_exit_status()
+    
+    if( exitCode != 0){
+      stop( readChar(outLog, file.info(outLog)$size) )
+    }
   }
-  
-  
+
   outDf <- NULL
   
   for(grp in grpCluster)
@@ -315,9 +325,9 @@ prep_image_folder <- function(docId){
 # =====================
 # MAIN OPERATOR CODE
 # =====================
-#http://127.0.0.1:5402/admin/w/378f18ac66a21562f6dc43c28401df71/ds/da68ad6d-2fbd-4a72-903c-68ce84607991
-#options("tercen.workflowId" = "378f18ac66a21562f6dc43c28401df71")
-#options("tercen.stepId"     = "da68ad6d-2fbd-4a72-903c-68ce84607991")
+#http://localhost:5402/admin/w/378f18ac66a21562f6dc43c28401df71/ds/34193be0-1ebe-46e2-9161-834e59536674
+options("tercen.workflowId" = "378f18ac66a21562f6dc43c28401df71")
+options("tercen.stepId"     = "34193be0-1ebe-46e2-9161-834e59536674")
 
 actual <- 0
 assign("actual", actual, envir = .GlobalEnv)
