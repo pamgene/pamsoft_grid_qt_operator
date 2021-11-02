@@ -417,6 +417,8 @@ qtTable$queu <- mapvalues(qtTable$grdImageNameUsed,
                                from=groups, 
                                to=unlist(queu) )
 
+processx:::supervisor_kill()
+
 # Preparation step
 qtTable %>% 
   group_by(grdImageNameUsed)   %>%
