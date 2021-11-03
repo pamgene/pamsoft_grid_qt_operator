@@ -1,290 +1,308 @@
 library(tercen)
 library(plyr)
 library(dplyr)
-
 library(stringr)
 library(jsonlite)
-
-
 library(processx)
 
-prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir){
-  
-  sqcMinDiameter       <- as.numeric(props$sqcMinDiameter) #0.45
-  segEdgeSensitivity   <- list(0, 0.01)
-  qntSeriesMode        <- 0
+prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
+
+  sqcMinDiameter <- as.numeric(props$sqcMinDiameter) #0.45
+  segEdgeSensitivity <- list(0, 0.01)
+  qntSeriesMode <- 0
   qntShowPamGridViewer <- 0
-  grdSpotPitch         <- as.numeric(props$grdSpotPitch) #21.5
-  grdSpotSize          <- as.numeric(props$grdSpotSize) #21.5
-  grdUseImage          <- "Last"
-  pgMode               <- "quantification"
-  dbgShowPresenter     <- "no"
+  grdSpotPitch <- as.numeric(props$grdSpotPitch) #21.5
+  grdSpotSize <- as.numeric(props$grdSpotSize) #21.5
+  grdUseImage <- "Last"
+  pgMode <- "quantification"
+  dbgShowPresenter <- "no"
   #-----------------------------------------------
   # END of property setting
-  baseFilename <- paste0( tmpDir, "/", grp, "_")
+  baseFilename <- paste0(tmpDir, "/", grp, "_")
   grd.ImageNameUsed = grp #df$grdImageNameUsed[[1]]
-  
-  
+
   # JUst need the image used for gridding, so we get the table from that
-  image   = df$Image[[1]]
+  image = df$Image[[1]]
   gridImageUsedTable = df %>% filter(Image == image)
-  
+
   gridImageUsedTable$variable = sapply(gridImageUsedTable$variable, remove_variable_ns)
-  
-  grdRow <- gridImageUsedTable %>% filter(variable == "grdXOffset") %>% pull(spotRow)
-  grdCol <- gridImageUsedTable %>% filter(variable == "grdYOffset") %>% pull(spotCol)
-  
-  grdXOffset <- gridImageUsedTable %>% filter(variable == "grdXOffset") %>% pull(.y)
-  grdYOffset <- gridImageUsedTable %>% filter(variable == "grdYOffset") %>% pull(.y)
-  
-  grdXFixedPosition <- gridImageUsedTable %>% filter(variable == "grdXFixedPosition") %>% pull(.y)
-  grdYFixedPosition <- gridImageUsedTable %>% filter(variable == "grdYFixedPosition") %>% pull(.y)
-  
-  gridX <- gridImageUsedTable %>% filter(variable == "gridX") %>% pull(.y)
-  gridY <- gridImageUsedTable %>% filter(variable == "gridY") %>% pull(.y)
-  
-  grdRotation <- gridImageUsedTable %>% filter(variable == "grdRotation") %>% pull(.y)
-  
-  qntSpotID <-gridImageUsedTable %>% filter(variable == "grdRotation") %>% pull(ID)
-  grdIsReference <- rep(0,length(qntSpotID))
-  for(i in seq_along(qntSpotID)) {
-    if (qntSpotID[i] == "#REF"){
+
+  grdRow <- gridImageUsedTable %>%
+    filter(variable == "grdXOffset") %>%
+    pull(spotRow)
+  grdCol <- gridImageUsedTable %>%
+    filter(variable == "grdYOffset") %>%
+    pull(spotCol)
+
+  grdXOffset <- gridImageUsedTable %>%
+    filter(variable == "grdXOffset") %>%
+    pull(.y)
+  grdYOffset <- gridImageUsedTable %>%
+    filter(variable == "grdYOffset") %>%
+    pull(.y)
+
+  grdXFixedPosition <- gridImageUsedTable %>%
+    filter(variable == "grdXFixedPosition") %>%
+    pull(.y)
+  grdYFixedPosition <- gridImageUsedTable %>%
+    filter(variable == "grdYFixedPosition") %>%
+    pull(.y)
+
+  gridX <- gridImageUsedTable %>%
+    filter(variable == "gridX") %>%
+    pull(.y)
+  gridY <- gridImageUsedTable %>%
+    filter(variable == "gridY") %>%
+    pull(.y)
+
+  grdRotation <- gridImageUsedTable %>%
+    filter(variable == "grdRotation") %>%
+    pull(.y)
+
+  qntSpotID <- gridImageUsedTable %>%
+    filter(variable == "grdRotation") %>%
+    pull(ID)
+  grdIsReference <- rep(0, length(qntSpotID))
+  for (i in seq_along(qntSpotID)) {
+    if (qntSpotID[i] == "#REF") {
       grdIsReference[i] = 1
     }
   }
-  
-  imageList <- unique( pull(df, "Image" ) )
-  
-  
-  
-  for(i in seq_along(imageList)) {
-    imageList[i] <- paste(imgInfo[1], imageList[i], sep = "/" )
-    imageList[i] <- paste(imageList[i], imgInfo[2], sep = "." )
+
+  imageList <- unique(pull(df, "Image"))
+
+  for (i in seq_along(imageList)) {
+    imageList[i] <- paste(imgInfo[1], imageList[i], sep = "/")
+    imageList[i] <- paste(imageList[i], imgInfo[2], sep = ".")
   }
-  
-  imageUsedPath <- paste(imgInfo[1],  grd.ImageNameUsed, sep = "/" )
-  imageUsedPath <- paste(imageUsedPath, imgInfo[2], sep = "." )
-  
-  
+
+  imageUsedPath <- paste(imgInfo[1], grd.ImageNameUsed, sep = "/")
+  imageUsedPath <- paste(imageUsedPath, imgInfo[2], sep = ".")
+
+
   dfGrid <- data.frame(
-    "qntSpotID"=qntSpotID,
-    "grdIsReference"=grdIsReference,
-    "grdRow"=grdRow,
-    "grdCol"=grdCol,
-    "grdXOffset"=grdXOffset,
-    "grdYOffset"=grdYOffset,
-    "grdXFixedPosition"=grdXFixedPosition,
-    "grdYFixedPosition"=grdYFixedPosition,
-    "gridX"=gridX,
-    "gridY"=gridY,
-    "grdRotation"=grdRotation,
-    "grdImageNameUsed"=imageUsedPath
+    "qntSpotID" = qntSpotID,
+    "grdIsReference" = grdIsReference,
+    "grdRow" = grdRow,
+    "grdCol" = grdCol,
+    "grdXOffset" = grdXOffset,
+    "grdYOffset" = grdYOffset,
+    "grdXFixedPosition" = grdXFixedPosition,
+    "grdYFixedPosition" = grdYFixedPosition,
+    "gridX" = gridX,
+    "gridY" = gridY,
+    "grdRotation" = grdRotation,
+    "grdImageNameUsed" = imageUsedPath
   )
-  
-  
+
+
   gridfile <- paste0(baseFilename, '_grid.txt') #tempfile(fileext=".txt") 
   #on.exit(unlink(gridfile))
-  
-  
-  write.table(dfGrid, gridfile, quote=FALSE,sep=",", row.names = FALSE)
-  
+
+
+  write.table(dfGrid, gridfile, quote = FALSE, sep = ",", row.names = FALSE)
+
   # The rest of the code should be very similar
   outputfile <- paste0(baseFilename, '_out.txt') #tempfile(fileext=".txt") 
   #on.exit(unlink(outputfile))
-  
-  if( length(imageList) > 1){
+
+  if (length(imageList) > 1) {
     imageList <- unlist(imageList)
-  }else{
+  }else {
     imageList <- list(imageList)
   }
-  
-  dfJson = list("sqcMinDiameter"=sqcMinDiameter, 
-                "segEdgeSensitivity"=segEdgeSensitivity,
-                "qntSeriesMode"=qntSeriesMode,
-                "qntShowPamGridViewer"=qntShowPamGridViewer,
-                "grdSpotPitch"=grdSpotPitch,
-                "grdSpotSize"=grdSpotSize,
-                "grdUseImage"=grdUseImage,
-                "pgMode"=pgMode,
-                "dbgShowPresenter"=dbgShowPresenter,
-                "arraylayoutfile"=props$arraylayoutfile,
-                "griddingoutputfile"=gridfile,
-                "outputfile"=outputfile, "imageslist"=imageList)
-  
-  jsonData <- toJSON(dfJson, pretty=TRUE, auto_unbox = TRUE)
-  
+
+  dfJson = list("sqcMinDiameter" = sqcMinDiameter,
+                "segEdgeSensitivity" = segEdgeSensitivity,
+                "qntSeriesMode" = qntSeriesMode,
+                "qntShowPamGridViewer" = qntShowPamGridViewer,
+                "grdSpotPitch" = grdSpotPitch,
+                "grdSpotSize" = grdSpotSize,
+                "grdUseImage" = grdUseImage,
+                "pgMode" = pgMode,
+                "dbgShowPresenter" = dbgShowPresenter,
+                "arraylayoutfile" = props$arraylayoutfile,
+                "griddingoutputfile" = gridfile,
+                "outputfile" = outputfile, "imageslist" = imageList)
+
+  jsonData <- toJSON(dfJson, pretty = TRUE, auto_unbox = TRUE)
+
   jsonFile <- paste0(baseFilename, '_param.json') #tempfile(fileext = ".json")
   #on.exit(unlink(jsonFile))
-  
+
   write(jsonData, jsonFile)
 }
 
-do.quant <- function(df, tmpDir){
+do.quant <- function(df, tmpDir) {
   ctx = tercenCtx()
   task = ctx$task
-  
+
   grpCluster <- unique(df$grdImageNameUsed)
-  
-  actual = get("actual",  envir = .GlobalEnv) + 1
-  total = get("total",  envir = .GlobalEnv) 
 
+  actual = get("actual", envir = .GlobalEnv) + 1
+  total = get("total", envir = .GlobalEnv)
   assign("actual", actual, envir = .GlobalEnv)
-  
 
-  procList <- list()
-  for(grp in grpCluster)
-  {
-    
-    baseFilename <- paste0( tmpDir, "/", grp, "_")
+  procList = lapply(grpCluster, function(grp) {
+    baseFilename <- paste0(tmpDir, "/", grp, "_")
     jsonFile <- paste0(baseFilename, '_param.json')
-
     MCR_PATH <- "/opt/mcr/v99"
-    
+
     outLog <- tempfile(fileext = '.log')
-    p<-processx::process$new("/mcr/exe/run_pamsoft_grid.sh", 
-                             c(MCR_PATH, 
-                               paste0("--param-file=", jsonFile[1])),
-                             stdout = outLog)
-    
-    procList <- append( procList, p )
-  }
-  
-  
+
+    p <- processx::process$new("/mcr/exe/run_pamsoft_grid.sh",
+                               c(MCR_PATH,
+                                 paste0("--param-file=", jsonFile[1])),
+                               stdout = outLog)
+
+    return(list(p = p, out = outLog))
+  })
+
   # Wait for all processes to finish
-  for(p in procList)
+  for (pObj in procList)
   {
     # Wait for 10 minutes then times out
-    p$wait(timeout = 1000 * 60 * 10)
-    exitCode <- p$get_exit_status()
-    
-    if( exitCode != 0){
-      stop( readChar(outLog, file.info(outLog)$size) )
+    pObj$p$wait(timeout = 1000 * 60 * 10)
+    exitCode <- pObj$p$get_exit_status()
+
+    if (exitCode != 0) {
+      for (pObj2 in procList) {
+        if (pObj2$p$is_alive()) {
+          print(paste0('kill process -- ' ))
+          print(pObj$p)
+          pObj2$p$kill()
+        }
+      }
+      stop(readChar(pObj$out, file.info(pObj$out)$size))
     }
   }
 
   outDf <- NULL
-  
-  for(grp in grpCluster)
+
+  for (grp in grpCluster)
   {
     grd.ImageNameUsed = grp
-    baseFilename <- paste0( tmpDir, "/", grd.ImageNameUsed, "_")
-    jsonFile <- paste0(baseFilename, '_param.json')
-    
+    baseFilename <- paste0(tmpDir, "/", grd.ImageNameUsed, "_")
+
     # The rest of the code should be very similar
-    outputfile <- paste0(baseFilename, "_out.txt") 
-    
-    
+    outputfile <- paste0(baseFilename, "_out.txt")
+
     quantOutput <- read.csv(outputfile, header = TRUE)
-    nGrid       <- nrow(quantOutput)
 
     inDf <- df %>% filter(grdImageNameUsed == grp)
-    
+
     # Filter by a single variable here with filter
-    inTable = inDf  %>% select(.ci, .ri, spotCol, spotRow, Image) %>% filter(.ri == 0 )
-    
-    quantOutput =  quantOutput %>% 
+    inTable = inDf %>%
+      select(.ci, .ri, spotCol, spotRow, Image) %>%
+      filter(.ri == 0)
+
+    quantOutput = quantOutput %>%
       rename(spotCol = Column) %>%
       rename(spotRow = Row) %>%
       rename(Image = ImageName) %>%
       mutate(across(where(is.numeric), as.double))
-    
-    
-    quantOutput = quantOutput %>% left_join(inTable, by=c("spotCol", "spotRow", "Image")) %>%
-      select(-spotCol, -spotRow, -Image, -.ri) 
-    
-    if(is.null(outDf)){
+
+    quantOutput = quantOutput %>%
+      left_join(inTable, by = c("spotCol", "spotRow", "Image")) %>%
+      select(-spotCol, -spotRow, -Image, -.ri)
+
+    if (is.null(outDf)) {
       outDf <- quantOutput
-    }else{
+    }else {
       outDf <- rbind(outDf, quantOutput)
     }
-    
+
     # Clean up
     jsonFile <- paste0(baseFilename, '_param.json')
     gridfile <- paste0(baseFilename, '_grid.txt')
-    
+
     unlink(gridfile)
     unlink(jsonFile)
     unlink(outputfile)
   }
-  
-  if(!is.null(task)){
+
+  if (!is.null(task)) {
     evt = TaskProgressEvent$new()
     evt$taskId = task$id
     evt$total = total
     evt$actual = actual
-    evt$message = paste0("Performing quantification: ",  actual, "/", total)
+    evt$message = paste0("Performing quantification: ", actual, "/", total)
     ctx$client$eventService$sendChannel(task$channelId, evt)
   }
-  
+
   return(outDf)
 }
 
 
-get_operator_props <- function(ctx, imagesFolder){
+get_operator_props <- function(ctx, imagesFolder) {
   sqcMinDiameter <- -1
-  grdSpotPitch   <- -1
-  grdSpotSize   <- -1
-  
-  operatorProps <- ctx$query$operatorSettings$operatorRef$propertyValues
-  
-  for( prop in operatorProps ){
-    if (prop$name == "MinDiameter"){
+  grdSpotPitch <- -1
+  grdSpotSize <- -1
+
+  operatorProps <- ctx$
+    query$
+    operatorSettings$
+    operatorRef$
+    propertyValues
+
+  for (prop in operatorProps) {
+    if (prop$name == "MinDiameter") {
       sqcMinDiameter <- prop$value
     }
-    
-    if (prop$name == "SpotPitch"){
+
+    if (prop$name == "SpotPitch") {
       grdSpotPitch <- prop$value
     }
-    
-    if (prop$name == "SpotSize"){
+
+    if (prop$name == "SpotSize") {
       grdSpotSize <- prop$value
     }
   }
-  
-  if( is.null(grdSpotPitch) || grdSpotPitch == -1 ){
+
+  if (is.null(grdSpotPitch) || grdSpotPitch == -1) {
     grdSpotPitch <- 21.5
   }
-  
-  if( is.null(grdSpotSize) || grdSpotSize == -1 ){
+
+  if (is.null(grdSpotSize) || grdSpotSize == -1) {
     grdSpotSize <- 0.66
   }
-  
-  if( is.null(sqcMinDiameter) || sqcMinDiameter == -1 ){
+
+  if (is.null(sqcMinDiameter) || sqcMinDiameter == -1) {
     sqcMinDiameter <- 0.45
   }
-  
+
   props <- list()
-  
+
   props$sqcMinDiameter <- sqcMinDiameter
   props$grdSpotPitch <- grdSpotPitch
   props$grdSpotSize <- grdSpotSize
-  
-  
+
+
   # Get array layout
   layoutDirParts <- str_split_fixed(imagesFolder, "/", Inf)
-  nParts  <- length(layoutDirParts) -1 # Layout is in parent folder
-  
+  nParts <- length(layoutDirParts) - 1 # Layout is in parent folder
+
   layoutDir = ''
-  
-  for( i in 1:nParts){
+
+  for (i in 1:nParts) {
     layoutDir <- paste(layoutDir, layoutDirParts[i], sep = "/")
   }
   layoutDir <- paste(layoutDir, "*Layout*", sep = "/")
-  
+
   props$arraylayoutfile <- Sys.glob(layoutDir)
-  
-  return (props)
+
+  return(props)
 }
 
-remove_variable_ns <- function(varName){
+remove_variable_ns <- function(varName) {
   fname <- str_split(varName, '[.]', Inf)
   fext <- fname[[1]][2]
-  
+
   return(fext)
 }
 
 
-prep_image_folder <- function(docId){
+prep_image_folder <- function(docId) {
   task = ctx$task
   evt = TaskProgressEvent$new()
   evt$taskId = task$id
@@ -292,33 +310,33 @@ prep_image_folder <- function(docId){
   evt$actual = 0
   evt$message = "Downloading image files"
   ctx$client$eventService$sendChannel(task$channelId, evt)
-  
+
   #1. extract files
-  doc   <- ctx$client$fileService$get(docId )
+  doc <- ctx$client$fileService$get(docId)
   filename <- tempfile()
   writeBin(ctx$client$fileService$download(docId), filename)
-  
+
   on.exit(unlink(filename, recursive = TRUE, force = TRUE))
-  
-  image_list <- vector(mode="list", length=length(grep(".zip", doc$name)) )
-  
+
+  image_list <- vector(mode = "list", length = length(grep(".zip", doc$name)))
+
   # unzip archive (which presumably exists at this point)
   tmpdir <- tempfile()
   unzip(filename, exdir = tmpdir)
-  
+
   imageResultsPath <- file.path(list.files(tmpdir, full.names = TRUE), "ImageResults")
-  
+
   f.names <- list.files(imageResultsPath, full.names = TRUE)
-  
+
   fdir <- str_split_fixed(f.names[1], "/", Inf)
   fdir <- fdir[length(fdir)]
-  
+
   fname <- str_split(fdir, '[.]', Inf)
   fext <- fname[[1]][2]
-  
+
   # Images for all series will be here
   return(list(imageResultsPath, fext))
-  
+
 }
 
 
@@ -326,8 +344,8 @@ prep_image_folder <- function(docId){
 # MAIN OPERATOR CODE
 # =====================
 #http://localhost:5402/admin/w/378f18ac66a21562f6dc43c28401df71/ds/34193be0-1ebe-46e2-9161-834e59536674
-options("tercen.workflowId" = "378f18ac66a21562f6dc43c28401df71")
-options("tercen.stepId"     = "34193be0-1ebe-46e2-9161-834e59536674")
+# options("tercen.workflowId" = "378f18ac66a21562f6dc43c28401df71")
+# options("tercen.stepId" = "34193be0-1ebe-46e2-9161-834e59536674")
 
 actual <- 0
 assign("actual", actual, envir = .GlobalEnv)
@@ -336,30 +354,30 @@ ctx = tercenCtx()
 
 task = ctx$task
 
-if(!is.null(task)){
+if (!is.null(task)) {
   evt = TaskProgressEvent$new()
   evt$taskId = task$id
   evt$message = "Loading table"
   ctx$client$eventService$sendChannel(task$channelId, evt)
 }
 
-required.cnames = c("documentId","grdImageNameUsed","Image","spotRow","spotCol","ID")
+required.cnames = c("documentId", "grdImageNameUsed", "Image", "spotRow", "spotCol", "ID")
 required.rnames = c("variable")
 
 cnames.with.ns = ctx$cnames
 rnames.with.ns = ctx$rnames
 
 # here we keep the order of required.cnames
-required.cnames.with.ns = lapply(required.cnames, function(required.cname){
-  Find(function(cname.with.ns){
+required.cnames.with.ns = lapply(required.cnames, function(required.cname) {
+  Find(function(cname.with.ns) {
     endsWith(cname.with.ns, required.cname)
-  }, cnames.with.ns, nomatch=required.cname)
+  }, cnames.with.ns, nomatch = required.cname)
 })
 
-required.rnames.with.ns = lapply(required.rnames, function(required.rname){
-  Find(function(rname.with.ns){
+required.rnames.with.ns = lapply(required.rnames, function(required.rname) {
+  Find(function(rname.with.ns) {
     endsWith(rname.with.ns, required.rname)
-  }, rnames.with.ns, nomatch=required.rname)
+  }, rnames.with.ns, nomatch = required.rname)
 })
 
 cTable <- ctx$cselect(required.cnames.with.ns)
@@ -370,21 +388,21 @@ names(cTable) = required.cnames
 names(rTable) = required.rnames
 
 
-docId     <- unique( cTable["documentId"]  )[[1]]
-imgInfo   <- prep_image_folder(docId)
-props     <- get_operator_props(ctx, imgInfo[1])
+docId <- unique(cTable["documentId"])[[1]]
+imgInfo <- prep_image_folder(docId)
+props <- get_operator_props(ctx, imgInfo[1])
 
 qtTable <- ctx$select(c(".ci", ".ri", ".y"))
-cTable[[".ci"]] = seq(0, nrow(cTable)-1)
+cTable[[".ci"]] = seq(0, nrow(cTable) - 1)
 
-qtTable = dplyr::left_join(qtTable,cTable,by=".ci")
+qtTable = dplyr::left_join(qtTable, cTable, by = ".ci")
 
-rTable[[".ri"]] = seq(0, nrow(rTable)-1)
+rTable[[".ri"]] = seq(0, nrow(rTable) - 1)
 
-qtTable = dplyr::left_join(qtTable,rTable,by=".ri")
+qtTable = dplyr::left_join(qtTable, rTable, by = ".ri")
 
 
-if(!is.null(task)){
+if (!is.null(task)) {
   evt = TaskProgressEvent$new()
   evt$taskId = task$id
 }
@@ -394,18 +412,18 @@ tmpDir <- tempdir()
 
 # Prepare processor queu
 groups <- unique(qtTable$grdImageNameUsed)
-nCores <- parallel::detectCores() 
+nCores <- parallel::detectCores()
 queu <- list()
 
 currentCore <- 1
 order <- 1
 k <- 1
 
-while(k <= length(groups)){
-  for(i in 1:nCores){
-    queu <- append( queu, order )
+while (k <= length(groups)) {
+  for (i in 1:nCores) {
+    queu <- append(queu, order)
     k <- k + 1
-    if( k > length(groups)){break}
+    if (k > length(groups)) { break }
   }
   order <- order + 1
 }
@@ -413,31 +431,31 @@ while(k <= length(groups)){
 
 assign("total", max(unlist(queu)), envir = .GlobalEnv)
 
-qtTable$queu <- mapvalues(qtTable$grdImageNameUsed, 
-                               from=groups, 
-                               to=unlist(queu) )
+qtTable$queu <- mapvalues(qtTable$grdImageNameUsed,
+                          from = groups,
+                          to = unlist(queu))
 
 processx:::supervisor_kill()
 
 # Preparation step
-qtTable %>% 
-  group_by(grdImageNameUsed)   %>%
-  group_walk(~ prep_quant_files(.x, props, docId, imgInfo, .y, tmpDir) ) 
+qtTable %>%
+  group_by(grdImageNameUsed) %>%
+  group_walk(~prep_quant_files(.x, props, docId, imgInfo, .y, tmpDir))
 
 
-if(!is.null(task)){
+if (!is.null(task)) {
   evt = TaskProgressEvent$new()
   evt$taskId = task$id
   evt$total = max(unlist(queu))
   evt$actual = 0
-  evt$message = paste0("Performing quantification: ",  actual, "/", total)
+  evt$message = paste0("Performing quantification: ", actual, "/", total)
   ctx$client$eventService$sendChannel(task$channelId, evt)
 }
 
 # Execution step
-qtTable %>% 
-  group_by(queu)   %>%
-  do(do.quant(., tmpDir)  ) %>%
+qtTable %>%
+  group_by(queu) %>%
+  do(do.quant(., tmpDir)) %>%
   ungroup() %>%
   select(-queu) %>%
   arrange(.ci) %>%
