@@ -4,7 +4,7 @@
   "tags": ["image analysis"],
   "authors": ["tercen"],
   "urls": ["https://github.com/tercen/pamsoft_grid_qt_operator"],
-  "container": "tercen/pamsoft_grid_qt_operator:1.0.20",
+  "container": "tercen/pamsoft_grid_qt_operator:1.0.21",
   "properties": [
    {
     "kind": "DoubleProperty",
@@ -35,9 +35,13 @@
     }, 
     
     {
-    "kind": "DoubleProperty",
+    "kind": "EnumerateProperty", 
     "name": "Diagnostic Output",
-    "defaultValue":1,
+    "defaultValue":"Yes",
+    "values":[
+      "Yes",
+      "No"
+    ]
     "description": ""
     }
   ]

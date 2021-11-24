@@ -68,18 +68,12 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
     filter(variable == "manual") %>%
     pull(.y)  %>% as.logical() %>% as.integer()
   
-  isOutlier <- gridImageUsedTable %>%
-    filter(variable == "outlier") %>%
-    pull(.y)  %>% as.logical() %>% as.integer()
-  
+
   isBad <- gridImageUsedTable %>%
     filter(variable == "bad") %>%
     pull(.y)  %>% as.logical() %>% as.integer()
   
-  isReplaced <- gridImageUsedTable %>%
-    filter(variable == "replaced") %>%
-    pull(.y)  %>% as.logical() %>% as.integer()
-  
+
   isEmpty <- gridImageUsedTable %>%
     filter(variable == "empty") %>%
     pull(.y)  %>% as.logical() %>% as.integer()
@@ -123,10 +117,8 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
     "grdRotation" = grdRotation,
     "grdImageNameUsed" = imageUsedPath,
     "isManual" = isManual,
-    "isOutlier" = isOutlier,
     "isBad" = isBad,
-    "isEmpty" = isEmpty,
-    "segIsReplaced" = isReplaced
+    "isEmpty" = isEmpty
   )
 
 
@@ -179,12 +171,14 @@ do.quant <- function(df, tmpDir) {
     jsonFile <- paste0(baseFilename, '_param.json')
     MCR_PATH <- "/opt/mcr/v99"
 
+
     outLog <- tempfile(fileext = '.log')
 
     p <- processx::process$new("/mcr/exe/run_pamsoft_grid.sh",
                                c(MCR_PATH,
                                  paste0("--param-file=", jsonFile[1])),
                                stdout = outLog)
+
 
     return(list(p = p, out = outLog))
   })
@@ -239,7 +233,9 @@ do.quant <- function(df, tmpDir) {
 
     if( props$isDiagnostic == FALSE){
       quantOutput <- quantOutput %>% 
-        select(-Median_Background, -Median_SigmBg, -Median_Signal, -Signal_Saturation)
+        select(-Bad_Spot, -Diameter, -Empty_Spot, -Fraction_Ignored,
+               -Position_Offset, -Replaced_Spot, -Mean_Background, -Mean_SigmBg,
+               -Mean_Signal, -grdImageNameUsed )
     }
 
     if (is.null(outDf)) {
@@ -301,7 +297,7 @@ get_operator_props <- function(ctx, imagesFolder) {
     }
     
     if (prop$name == "Diagnostic Output") {
-      isDiagnostic <- as.logical( as.integer(prop$value) )
+      isDiagnostic <- prop$value
     }
     
   }
@@ -323,9 +319,14 @@ get_operator_props <- function(ctx, imagesFolder) {
   }
   
   if (is.null(isDiagnostic) || isDiagnostic == -1) {
-    isDiagnostic <- TRUE
+    isDiagnostic <- "Yes"
   }
   
+  if( isDiagnostic =="No"){
+    isDiagnostic = FALSE
+  }else{
+    isDiagnostic = TRUE
+  }
 
   props <- list()
 
@@ -401,9 +402,9 @@ prep_image_folder <- function(docId) {
 # =====================
 # MAIN OPERATOR CODE
 # =====================
-#http://localhost:5402/admin/w/ac924e73ee442b910408775d770a36be/ds/b67dcac4-6d27-4da7-af5a-62189b6a338b
+#http://localhost:5402/admin/w/ac924e73ee442b910408775d770a36be/ds/e43836ef-10fe-4ad5-a509-574956a713e0
 # options("tercen.workflowId" = "ac924e73ee442b910408775d770a36be")
-# options("tercen.stepId" = "b67dcac4-6d27-4da7-af5a-62189b6a338b")
+# options("tercen.stepId" = "e43836ef-10fe-4ad5-a509-574956a713e0")
 
 actual <- 0
 assign("actual", actual, envir = .GlobalEnv)
@@ -472,7 +473,7 @@ names(rTable) = required.rnames
 variables <- rTable %>% pull(variable)
 req.variables <- c("grdRotation", "grdXFixedPosition", "grdYFixedPosition",
   "grdXOffset", "grdYOffset", "gridX", "gridY", "diameter", 
-  "outlier", "bad", "empty", "replaced", "manual")
+  "bad", "empty",  "manual")
 
 if( !all(unlist(lapply( req.variables, function(x){ any(grepl(x, variables))  }  ))) ){
   msg <- paste0( "The following are variables are required from a Gather step: ", unlist(paste0(req.variables, sep=', ', collapse = '')))
