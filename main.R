@@ -301,7 +301,7 @@ get_operator_props <- function(ctx, imagesFolder) {
     }
     
     if (prop$name == "Diagnostic Output") {
-      isDiagnostic <- as.logical( prop$value )
+      isDiagnostic <- as.logical( as.integer(prop$value) )
     }
     
   }
