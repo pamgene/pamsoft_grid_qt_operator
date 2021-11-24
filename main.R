@@ -11,15 +11,16 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
   segEdgeSensitivity <- list(0, 0.01)
   qntSeriesMode <- 0
   qntShowPamGridViewer <- 0
-  grdSpotPitch <- as.numeric(props$grdSpotPitch) #21.5
-  grdSpotSize <- as.numeric(props$grdSpotSize) #21.5
+  grdSpotPitch <- props$grdSpotPitch #21.5
+  grdSpotSize <- props$grdSpotSize #21.5
+  qntSaturationLimit <- props$qntSaturationLimit
   grdUseImage <- "Last"
   pgMode <- "quantification"
   dbgShowPresenter <- "no"
   #-----------------------------------------------
   # END of property setting
   baseFilename <- paste0(tmpDir, "/", grp, "_")
-  grd.ImageNameUsed = grp #df$grdImageNameUsed[[1]]
+  grd.ImageNameUsed = grp 
 
   # JUst need the image used for gridding, so we get the table from that
   image = df$Image[[1]]
@@ -47,6 +48,10 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
   grdYFixedPosition <- gridImageUsedTable %>%
     filter(variable == "grdYFixedPosition") %>%
     pull(.y)
+  
+  diameter <- gridImageUsedTable %>%
+    filter(variable == "diameter") %>%
+    pull(.y)
 
   gridX <- gridImageUsedTable %>%
     filter(variable == "gridX") %>%
@@ -58,10 +63,33 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
   grdRotation <- gridImageUsedTable %>%
     filter(variable == "grdRotation") %>%
     pull(.y)
+  
+  isManual <- gridImageUsedTable %>%
+    filter(variable == "manual") %>%
+    pull(.y)  %>% as.logical() %>% as.integer()
+  
+  isOutlier <- gridImageUsedTable %>%
+    filter(variable == "outlier") %>%
+    pull(.y)  %>% as.logical() %>% as.integer()
+  
+  isBad <- gridImageUsedTable %>%
+    filter(variable == "bad") %>%
+    pull(.y)  %>% as.logical() %>% as.integer()
+  
+  isReplaced <- gridImageUsedTable %>%
+    filter(variable == "replaced") %>%
+    pull(.y)  %>% as.logical() %>% as.integer()
+  
+  isEmpty <- gridImageUsedTable %>%
+    filter(variable == "empty") %>%
+    pull(.y)  %>% as.logical() %>% as.integer()
+  
 
+  
   qntSpotID <- gridImageUsedTable %>%
     filter(variable == "grdRotation") %>%
     pull(ID)
+  
   grdIsReference <- rep(0, length(qntSpotID))
   for (i in seq_along(qntSpotID)) {
     if (qntSpotID[i] == "#REF") {
@@ -91,20 +119,23 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
     "grdYFixedPosition" = grdYFixedPosition,
     "gridX" = gridX,
     "gridY" = gridY,
+    "diameter" = diameter,
     "grdRotation" = grdRotation,
-    "grdImageNameUsed" = imageUsedPath
+    "grdImageNameUsed" = imageUsedPath,
+    "isManual" = isManual,
+    "isOutlier" = isOutlier,
+    "isBad" = isBad,
+    "isEmpty" = isEmpty,
+    "segIsReplaced" = isReplaced
   )
 
 
-  gridfile <- paste0(baseFilename, '_grid.txt') #tempfile(fileext=".txt") 
-  #on.exit(unlink(gridfile))
-
+  gridfile <- paste0(baseFilename, '_grid.txt') 
 
   write.table(dfGrid, gridfile, quote = FALSE, sep = ",", row.names = FALSE)
 
-  # The rest of the code should be very similar
-  outputfile <- paste0(baseFilename, '_out.txt') #tempfile(fileext=".txt") 
-  #on.exit(unlink(outputfile))
+   outputfile <- paste0(baseFilename, '_out.txt') 
+ 
 
   if (length(imageList) > 1) {
     imageList <- unlist(imageList)
@@ -116,6 +147,7 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
                 "segEdgeSensitivity" = segEdgeSensitivity,
                 "qntSeriesMode" = qntSeriesMode,
                 "qntShowPamGridViewer" = qntShowPamGridViewer,
+                "qntSaturationLimit" = qntSaturationLimit,
                 "grdSpotPitch" = grdSpotPitch,
                 "grdSpotSize" = grdSpotSize,
                 "grdUseImage" = grdUseImage,
@@ -127,8 +159,7 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
 
   jsonData <- toJSON(dfJson, pretty = TRUE, auto_unbox = TRUE)
 
-  jsonFile <- paste0(baseFilename, '_param.json') #tempfile(fileext = ".json")
-  #on.exit(unlink(jsonFile))
+  jsonFile <- paste0(baseFilename, '_param.json') 
 
   write(jsonData, jsonFile)
 }
@@ -154,6 +185,7 @@ do.quant <- function(df, tmpDir) {
                                c(MCR_PATH,
                                  paste0("--param-file=", jsonFile[1])),
                                stdout = outLog)
+
 
     return(list(p = p, out = outLog))
   })
@@ -238,6 +270,7 @@ get_operator_props <- function(ctx, imagesFolder) {
   sqcMinDiameter <- -1
   grdSpotPitch <- -1
   grdSpotSize <- -1
+  qntSaturationLimit <- -1
 
   operatorProps <- ctx$
     query$
@@ -246,17 +279,22 @@ get_operator_props <- function(ctx, imagesFolder) {
     propertyValues
 
   for (prop in operatorProps) {
-    if (prop$name == "MinDiameter") {
-      sqcMinDiameter <- prop$value
+    if (prop$name == "Min Diameter") {
+      sqcMinDiameter <- as.numeric(prop$value)
     }
 
-    if (prop$name == "SpotPitch") {
-      grdSpotPitch <- prop$value
+    if (prop$name == "Spot Pitch") {
+      grdSpotPitch <- as.numeric(prop$value)
     }
 
-    if (prop$name == "SpotSize") {
-      grdSpotSize <- prop$value
+    if (prop$name == "Spot Size") {
+      grdSpotSize <- as.numeric(prop$value)
     }
+    
+    if (prop$name == "Saturation Limit") {
+      qntSaturationLimit <- as.numeric( prop$value )
+    }
+    
   }
 
   if (is.null(grdSpotPitch) || grdSpotPitch == -1) {
@@ -270,12 +308,18 @@ get_operator_props <- function(ctx, imagesFolder) {
   if (is.null(sqcMinDiameter) || sqcMinDiameter == -1) {
     sqcMinDiameter <- 0.45
   }
+  
+  if (is.null(qntSaturationLimit) || qntSaturationLimit == -1) {
+    qntSaturationLimit <- 2^12 - 1
+  }
+  
 
   props <- list()
 
   props$sqcMinDiameter <- sqcMinDiameter
   props$grdSpotPitch <- grdSpotPitch
   props$grdSpotSize <- grdSpotSize
+  props$qntSaturationLimit <- qntSaturationLimit
 
 
   # Get array layout
@@ -343,9 +387,9 @@ prep_image_folder <- function(docId) {
 # =====================
 # MAIN OPERATOR CODE
 # =====================
-#http://localhost:5402/admin/w/378f18ac66a21562f6dc43c28401df71/ds/34193be0-1ebe-46e2-9161-834e59536674
-# options("tercen.workflowId" = "378f18ac66a21562f6dc43c28401df71")
-# options("tercen.stepId" = "34193be0-1ebe-46e2-9161-834e59536674")
+#http://localhost:5402/admin/w/ac924e73ee442b910408775d770a36be/ds/b67dcac4-6d27-4da7-af5a-62189b6a338b
+# options("tercen.workflowId" = "ac924e73ee442b910408775d770a36be")
+# options("tercen.stepId" = "b67dcac4-6d27-4da7-af5a-62189b6a338b")
 
 actual <- 0
 assign("actual", actual, envir = .GlobalEnv)
@@ -367,6 +411,27 @@ required.rnames = c("variable")
 cnames.with.ns = ctx$cnames
 rnames.with.ns = ctx$rnames
 
+
+
+# Check if all columns exist exist
+if(!all(unlist(  lapply(required.cnames, function(x)  any(grepl(x,  cnames.with.ns)) )))){
+  msg <- paste0( "The following are required columns: ", unlist(paste0(required.cnames, sep=', ', collapse = '')))
+  msg <- substr(msg, 1, nchar(msg)-2)
+                 
+  stop(msg)
+}
+  
+
+# Check if row is setup correctly
+if(!all(unlist(  lapply(required.rnames, function(x)  any(grepl(x,  rnames.with.ns)) )))){
+  msg <- paste0( "The following are required rows: ", unlist(paste0(required.rnames, sep=', ', collapse = '')))
+  msg <- substr(msg, 1, nchar(msg)-2)
+  
+  stop(msg)
+}
+
+
+
 # here we keep the order of required.cnames
 required.cnames.with.ns = lapply(required.cnames, function(required.cname) {
   Find(function(cname.with.ns) {
@@ -380,6 +445,8 @@ required.rnames.with.ns = lapply(required.rnames, function(required.rname) {
   }, rnames.with.ns, nomatch = required.rname)
 })
 
+
+
 cTable <- ctx$cselect(required.cnames.with.ns)
 rTable <- ctx$rselect(required.rnames.with.ns)
 
@@ -387,12 +454,28 @@ rTable <- ctx$rselect(required.rnames.with.ns)
 names(cTable) = required.cnames
 names(rTable) = required.rnames
 
+# Ensure all variables have been selected in the gather step
+variables <- rTable %>% pull(variable)
+req.variables <- c("grdRotation", "grdXFixedPosition", "grdYFixedPosition",
+  "grdXOffset", "grdYOffset", "gridX", "gridY", "diameter", 
+  "outlier", "bad", "empty", "replaced", "manual")
+
+if( !all(unlist(lapply( req.variables, function(x){ any(grepl(x, variables))  }  ))) ){
+  msg <- paste0( "The following are variables are required from a Gather step: ", unlist(paste0(req.variables, sep=', ', collapse = '')))
+  msg <- substr(msg, 1, nchar(msg)-2)
+  
+  stop(msg)
+}
+
+
 
 docId <- unique(cTable["documentId"])[[1]]
 imgInfo <- prep_image_folder(docId)
 props <- get_operator_props(ctx, imgInfo[1])
 
 qtTable <- ctx$select(c(".ci", ".ri", ".y"))
+
+
 cTable[[".ci"]] = seq(0, nrow(cTable) - 1)
 
 qtTable = dplyr::left_join(qtTable, cTable, by = ".ci")
@@ -435,7 +518,6 @@ qtTable$queu <- mapvalues(qtTable$grdImageNameUsed,
                           from = groups,
                           to = unlist(queu))
 
-processx:::supervisor_kill()
 
 # Preparation step
 qtTable %>%
@@ -453,17 +535,13 @@ if (!is.null(task)) {
 }
 
 # Execution step
-qtTable %>%
+df <- qtTable %>%
   group_by(queu) %>%
   do(do.quant(., tmpDir)) %>%
   ungroup() %>%
   select(-queu) %>%
   arrange(.ci) %>%
   ctx$addNamespace() %>%
-  ctx$save() 
+  ctx$save()
 
 
-
-
-  
-  
