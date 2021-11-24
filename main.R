@@ -186,7 +186,6 @@ do.quant <- function(df, tmpDir) {
                                  paste0("--param-file=", jsonFile[1])),
                                stdout = outLog)
 
-
     return(list(p = p, out = outLog))
   })
 
@@ -238,6 +237,11 @@ do.quant <- function(df, tmpDir) {
       left_join(inTable, by = c("spotCol", "spotRow", "Image")) %>%
       select(-spotCol, -spotRow, -Image, -.ri)
 
+    if( props$isDiagnostic == FALSE){
+      quantOutput <- quantOutput %>% 
+        select(-Median_Background, -Median_SigmBg, -Median_Signal, -Signal_Saturation)
+    }
+
     if (is.null(outDf)) {
       outDf <- quantOutput
     }else {
@@ -271,6 +275,7 @@ get_operator_props <- function(ctx, imagesFolder) {
   grdSpotPitch <- -1
   grdSpotSize <- -1
   qntSaturationLimit <- -1
+  isDiagnostic <- -1
 
   operatorProps <- ctx$
     query$
@@ -295,6 +300,10 @@ get_operator_props <- function(ctx, imagesFolder) {
       qntSaturationLimit <- as.numeric( prop$value )
     }
     
+    if (prop$name == "Diagnostic Output") {
+      isDiagnostic <- as.logical( prop$value )
+    }
+    
   }
 
   if (is.null(grdSpotPitch) || grdSpotPitch == -1) {
@@ -313,6 +322,10 @@ get_operator_props <- function(ctx, imagesFolder) {
     qntSaturationLimit <- 2^12 - 1
   }
   
+  if (is.null(isDiagnostic) || isDiagnostic == -1) {
+    isDiagnostic <- TRUE
+  }
+  
 
   props <- list()
 
@@ -320,6 +333,7 @@ get_operator_props <- function(ctx, imagesFolder) {
   props$grdSpotPitch <- grdSpotPitch
   props$grdSpotSize <- grdSpotSize
   props$qntSaturationLimit <- qntSaturationLimit
+  props$isDiagnostic <- isDiagnostic
 
 
   # Get array layout

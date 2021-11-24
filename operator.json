@@ -4,7 +4,7 @@
   "tags": ["image analysis"],
   "authors": ["tercen"],
   "urls": ["https://github.com/tercen/pamsoft_grid_qt_operator"],
-  "container": "tercen/pamsoft_grid_qt_operator:1.0.16",
+  "container": "tercen/pamsoft_grid_qt_operator:1.0.17",
   "properties": [
    {
     "kind": "DoubleProperty",
@@ -31,6 +31,13 @@
     "kind": "DoubleProperty",
     "name": "Saturation Limit",
     "defaultValue":4095,
+    "description": ""
+    }, 
+    
+    {
+    "kind": "DoubleProperty",
+    "name": "Diagnostic Output",
+    "defaultValue":1,
     "description": ""
     }
   ]
