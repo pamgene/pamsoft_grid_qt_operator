@@ -171,14 +171,11 @@ do.quant <- function(df, tmpDir) {
     jsonFile <- paste0(baseFilename, '_param.json')
     MCR_PATH <- "/opt/mcr/v99"
 
-
-    outLog <- tempfile(fileext = '.log')
-
+    outLog <- tempfile(fileext=".log")
     p <- processx::process$new("/mcr/exe/run_pamsoft_grid.sh",
                                c(MCR_PATH,
                                  paste0("--param-file=", jsonFile[1])),
                                stdout = outLog)
-
 
     return(list(p = p, out = outLog))
   })
@@ -198,6 +195,8 @@ do.quant <- function(df, tmpDir) {
           pObj2$p$kill()
         }
       }
+      
+
       stop(readChar(pObj$out, file.info(pObj$out)$size))
     }
   }
@@ -235,7 +234,7 @@ do.quant <- function(df, tmpDir) {
       quantOutput <- quantOutput %>% 
         select(-Bad_Spot, -Diameter, -Empty_Spot, -Fraction_Ignored,
                -Position_Offset, -Replaced_Spot, -Mean_Background, -Mean_SigmBg,
-               -Mean_Signal, -grdImageNameUsed )
+               -Mean_Signal )
     }
 
     if (is.null(outDf)) {
