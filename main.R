@@ -171,11 +171,13 @@ do.quant <- function(df, tmpDir) {
     jsonFile <- paste0(baseFilename, '_param.json')
     MCR_PATH <- "/opt/mcr/v99"
 
+
     outLog <- tempfile(fileext=".log")
     p <- processx::process$new("/mcr/exe/run_pamsoft_grid.sh",
                                c(MCR_PATH,
                                  paste0("--param-file=", jsonFile[1])),
                                stdout = outLog)
+
 
     return(list(p = p, out = outLog))
   })
