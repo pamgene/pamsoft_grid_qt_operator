@@ -1,7 +1,7 @@
 {
   "kind": "OperatorUnitTest",
   "name": "test",
-  "namespace": "ds12",
+  "namespace": "ds4",
   "inputFileUris": ["pg_data.zip"],
   "inputDataUri": "input.csv",
   "outputDataUri": ["table1.csv","table2.csv"],

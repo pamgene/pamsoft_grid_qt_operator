@@ -29,18 +29,12 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
   gridImageUsedTable$variable = sapply(gridImageUsedTable$variable, remove_variable_ns)
 
   grdRow <- gridImageUsedTable %>%
-    filter(variable == "grdXOffset") %>%
+    filter(variable == "gridX") %>%
     pull(spotRow)
   grdCol <- gridImageUsedTable %>%
-    filter(variable == "grdYOffset") %>%
+    filter(variable == "gridY") %>%
     pull(spotCol)
 
-  grdXOffset <- gridImageUsedTable %>%
-    filter(variable == "grdXOffset") %>%
-    pull(.y)
-  grdYOffset <- gridImageUsedTable %>%
-    filter(variable == "grdYOffset") %>%
-    pull(.y)
 
   grdXFixedPosition <- gridImageUsedTable %>%
     filter(variable == "grdXFixedPosition") %>%
@@ -107,8 +101,6 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
     "grdIsReference" = grdIsReference,
     "grdRow" = grdRow,
     "grdCol" = grdCol,
-    "grdXOffset" = grdXOffset,
-    "grdYOffset" = grdYOffset,
     "grdXFixedPosition" = grdXFixedPosition,
     "grdYFixedPosition" = grdYFixedPosition,
     "gridX" = gridX,
@@ -179,6 +171,7 @@ do.quant <- function(df, tmpDir) {
                                stdout = outLog)
 
 
+
     return(list(p = p, out = outLog))
   })
 
@@ -222,9 +215,11 @@ do.quant <- function(df, tmpDir) {
       select(.ci, .ri, spotCol, spotRow, Image) %>%
       filter(.ri == 0)
 
+    print(quantOutput)
+    
     quantOutput = quantOutput %>%
       rename(spotCol = Column) %>%
-      rename(spotRow = Row) %>%
+      rename(spotRow = ROW) %>%
       rename(Image = ImageName) %>%
       mutate(across(where(is.numeric), as.double))
 
@@ -403,9 +398,9 @@ prep_image_folder <- function(docId) {
 # =====================
 # MAIN OPERATOR CODE
 # =====================
-#http://localhost:5402/admin/w/ac924e73ee442b910408775d770a36be/ds/e43836ef-10fe-4ad5-a509-574956a713e0
-# options("tercen.workflowId" = "ac924e73ee442b910408775d770a36be")
-# options("tercen.stepId" = "e43836ef-10fe-4ad5-a509-574956a713e0")
+#http://localhost:5402/admin/w/11143520a88672e0a07f89bb88075d15/ds/78c6b6d3-b857-4fed-8a97-a25e45ca06a6
+# options("tercen.workflowId" = "11143520a88672e0a07f89bb88075d15")
+# options("tercen.stepId" = "78c6b6d3-b857-4fed-8a97-a25e45ca06a6")
 
 actual <- 0
 assign("actual", actual, envir = .GlobalEnv)
@@ -472,8 +467,7 @@ names(rTable) = required.rnames
 
 # Ensure all variables have been selected in the gather step
 variables <- rTable %>% pull(variable)
-req.variables <- c("grdRotation", "grdXFixedPosition", "grdYFixedPosition",
-  "grdXOffset", "grdYOffset", "gridX", "gridY", "diameter", 
+req.variables <- c("grdRotation", "grdXFixedPosition", "grdYFixedPosition", "gridX", "gridY", "diameter", 
   "bad", "empty",  "manual")
 
 if( !all(unlist(lapply( req.variables, function(x){ any(grepl(x, variables))  }  ))) ){
