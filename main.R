@@ -171,7 +171,6 @@ do.quant <- function(df, tmpDir) {
                                stdout = outLog)
 
 
-
     return(list(p = p, out = outLog))
   })
 
@@ -215,8 +214,7 @@ do.quant <- function(df, tmpDir) {
       select(.ci, .ri, spotCol, spotRow, Image) %>%
       filter(.ri == 0)
 
-    print(quantOutput)
-    
+
     quantOutput = quantOutput %>%
       rename(spotCol = Column) %>%
       rename(spotRow = ROW) %>%
@@ -398,8 +396,8 @@ prep_image_folder <- function(docId) {
 # =====================
 # MAIN OPERATOR CODE
 # =====================
-#http://localhost:5402/admin/w/11143520a88672e0a07f89bb88075d15/ds/78c6b6d3-b857-4fed-8a97-a25e45ca06a6
-# options("tercen.workflowId" = "11143520a88672e0a07f89bb88075d15")
+#http://localhost:5402/admin/w/c41add34d78230432ba802d98801cec3/ds/78c6b6d3-b857-4fed-8a97-a25e45ca06a6
+# options("tercen.workflowId" = "c41add34d78230432ba802d98801cec3")
 # options("tercen.stepId" = "78c6b6d3-b857-4fed-8a97-a25e45ca06a6")
 
 actual <- 0
