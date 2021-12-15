@@ -4,7 +4,7 @@
   "tags": ["image analysis"],
   "authors": ["tercen"],
   "urls": ["https://github.com/tercen/pamsoft_grid_qt_operator"],
-  "container": "tercen/pamsoft_grid_qt_operator:1.0.35",
+  "container": "tercen/pamsoft_grid_qt_operator:1.0.36",
   "properties": [
    {
     "kind": "DoubleProperty",
@@ -36,18 +36,19 @@
     
     {
     "kind": "DoubleProperty",
-    "name": "Edge Sensitivity",
-    "defaultValue":0.05,
-    "description": ""
-    },
-    
-    {
-    "kind": "DoubleProperty",
     "name": "Spot Size",
     "defaultValue":0.66,
     "description": ""
     },
     
+    {
+    "kind": "DoubleProperty",
+    "name": "Edge Sensitivity",
+    "defaultValue":0.05,
+    "description": ""
+    },
+    
+
     {
     "kind": "EnumeratedProperty",
     "name": "Segmentation Method",

@@ -237,13 +237,14 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
     imageList <- list(imageList)
   }
 
+
   dfJson = list("sqcMinDiameter"=props$sqcMinDiameter,
                 "sqcMaxDiameter"=props$sqcMaxDiameter,
                 "segEdgeSensitivity"=props$segEdgeSensitivity,
                 "qntSeriesMode"=0,
                 "qntShowPamGridViewer"=0,
                 "grdSpotPitch"=props$grdSpotPitch,
-                "grdSpotsize"=props$grdSpotsize,
+                "grdSpotSize"=props$grdSpotSize,
                 "grdRotation"=props$grdRotation,
                 "qntSaturationLimit"=props$qntSaturationLimit,
                 "segMethod"=props$segMethod,
@@ -251,6 +252,7 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
                 "pgMode"="quantification",
                 "dbgShowPresenter"=0,
                 "arraylayoutfile"=props$arraylayoutfile,
+                "griddingoutputfile"=gridfile,
                 "outputfile"=outputfile, "imageslist"=unlist(imageList))
   
 
@@ -282,6 +284,7 @@ do.quant <- function(df, tmpDir) {
                                c(MCR_PATH,
                                  paste0("--param-file=", jsonFile[1])),
                                stdout = outLog)
+    
     
 
     return(list(p = p, out = outLog))
@@ -490,7 +493,7 @@ if (!is.null(task)) {
   evt$taskId = task$id
 }
 
-tmpDir <-tempdir()
+tmpDir <- tempdir()
 
 
 # Prepare processor queu
