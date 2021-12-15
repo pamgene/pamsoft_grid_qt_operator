@@ -31,7 +31,12 @@ get_operator_props <- function(ctx, imagesFolder){
     }
     
     if (prop$name == "Rotation"){
-      grdRotation <- as.numeric(prop$value)
+      if(prop$value == "0"){
+        grdRotation <- as.numeric(prop$value)
+      }else{
+        prts <- as.numeric(unlist(str_split(prop$value, ":")))
+        grdRotation <- seq(prts[1], prts[3], by=prts[2])
+      }
     }
     
     if (prop$name == "Saturation Limit"){
@@ -51,14 +56,14 @@ get_operator_props <- function(ctx, imagesFolder){
     }
     
     if (prop$name == "Edge Sensitivity"){
-      segEdgeSensitivity <- as.list(as.numeric(prop$value))
+      segEdgeSensitivity[2] <- as.numeric(prop$value)
     }
   }
   
   
   props <- list()
   
-    props$sqcMinDiameter <- sqcMinDiameter
+  props$sqcMinDiameter <- sqcMinDiameter
   props$sqcMaxDiameter <- sqcMaxDiameter
   props$grdSpotPitch <- grdSpotPitch
   props$grdSpotSize <- grdSpotSize
