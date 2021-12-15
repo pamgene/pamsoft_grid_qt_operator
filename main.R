@@ -52,7 +52,12 @@ get_operator_props <- function(ctx, imagesFolder){
     }
     
     if (prop$name == "Diagnostic Output"){
-      isDiagnostic <- as.logical(prop$value)
+      if( prop$value == "Yes" ){
+        isDiagnostic <- TRUE
+      }else{
+        isDiagnostic <- FALSE
+      }
+        
     }
     
     if (prop$name == "Edge Sensitivity"){
