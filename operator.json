@@ -4,12 +4,27 @@
   "tags": ["image analysis"],
   "authors": ["tercen"],
   "urls": ["https://github.com/tercen/pamsoft_grid_qt_operator"],
-  "container": "tercen/pamsoft_grid_qt_operator:1.0.30",
+  "container": "tercen/pamsoft_grid_qt_operator:1.0.31",
+  "properties":
   "properties": [
-   {
+  {
     "kind": "DoubleProperty",
     "name": "Min Diameter",
     "defaultValue":0.45,
+    "description": ""
+    },
+    
+    {
+    "kind": "DoubleProperty",
+    "name": "Max Diameter",
+    "defaultValue":0.85,
+    "description": ""
+    },
+    
+    {
+    "kind": "DoubleProperty",
+    "name": "Saturation Limit",
+    "defaultValue":4095,
     "description": ""
     },
     
@@ -22,19 +37,42 @@
     
     {
     "kind": "DoubleProperty",
+    "name": "EdgeSensitivityLow",
+    "defaultValue":0,
+    "description": ""
+    },
+    {
+    "kind": "DoubleProperty",
+    "name": "Edge Sensitivity",
+    "defaultValue":[0, 0.05],
+    "description": ""
+    },
+    
+    {
+    "kind": "DoubleProperty",
     "name": "Spot Size",
     "defaultValue":0.66,
     "description": ""
     },
     
     {
-    "kind": "DoubleProperty",
-    "name": "Saturation Limit",
-    "defaultValue":4095,
+    "kind": "EnumeratedProperty",
+    "name": "Segmentation Method",
+    "defaultValue":"Edge",
+    "values":[
+      "Edge",
+      "Hough"
+    ]
     "description": ""
-    }, 
+    },
     
-
+    {
+    "kind": "StringProperty",
+    "name": "Rotation",
+    "defaultValue":"0",
+    "description": "Template rotation range in the format min:step:max (eg. -2:0.25:2)."
+    },
+    
     {
     "kind": "EnumeratedProperty", 
     "name": "Diagnostic Output",

@@ -5,20 +5,125 @@ library(stringr)
 library(jsonlite)
 library(processx)
 
-prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
 
-  sqcMinDiameter <- as.numeric(props$sqcMinDiameter) #0.45
-  segEdgeSensitivity <- list(0, 0.01)
-  qntSeriesMode <- 0
-  qntShowPamGridViewer <- 0
-  grdSpotPitch <- props$grdSpotPitch #21.5
-  grdSpotSize <- props$grdSpotSize #21.5
-  qntSaturationLimit <- props$qntSaturationLimit
-  grdUseImage <- "Last"
-  pgMode <- "quantification"
-  dbgShowPresenter <- "no"
-  #-----------------------------------------------
-  # END of property setting
+
+get_operator_props <- function(ctx, imagesFolder){
+  sqcMinDiameter     <- 0.45
+  sqcMaxDiameter     <- 0.85
+  grdSpotPitch       <- 21.5
+  grdSpotSize        <- 0.66
+  grdRotation        <- 0
+  qntSaturationLimit <- 4095
+  segMethod          <- "Edge"
+  segEdgeSensitivity <- list(0, 0.05)
+  isDiagnostic       <- TRUE
+  
+  operatorProps <- ctx$query$operatorSettings$operatorRef$propertyValues
+  
+  for( prop in operatorProps ){
+    
+    if (prop$name == "Min Diameter"){
+      sqcMinDiameter <- as.numeric(prop$value)
+    }
+    
+    if (prop$name == "Max Diameter"){
+      sqcMaxDiameter <- as.numeric(prop$value)
+    }
+    
+    if (prop$name == "Rotation"){
+      grdRotation <- as.numeric(prop$value)
+    }
+    
+    if (prop$name == "Saturation Limit"){
+      qntSaturationLimit <- as.numeric(prop$value)
+    }
+    
+    if (prop$name == "Spot Pitch"){
+      grdSpotPitch <- as.numeric(prop$value)
+    }
+    
+    if (prop$name == "Spot Size"){
+      grdSpotSize <- as.numeric(prop$value)
+    }
+    
+    if (prop$name == "Diagnostic Output"){
+      isDiagnostic <- as.logical(prop$value)
+    }
+    
+    if (prop$name == "Edge Sensitivity"){
+      segEdgeSensitivity <- as.list(as.numeric(prop$value))
+    }
+  }
+  
+  
+  props <- list()
+  
+    props$sqcMinDiameter <- sqcMinDiameter
+  props$sqcMaxDiameter <- sqcMaxDiameter
+  props$grdSpotPitch <- grdSpotPitch
+  props$grdSpotSize <- grdSpotSize
+  props$grdRotation <- grdRotation
+  props$qntSaturationLimit <- qntSaturationLimit
+  props$segEdgeSensitivity <- segEdgeSensitivity
+  props$segMethod <- segMethod
+  props$isDiagnostic <- isDiagnostic
+  
+  # Get array layout
+  layoutDirParts <- str_split_fixed(imagesFolder, "/", Inf)
+  nParts  <- length(layoutDirParts) -1 # Layout is in parent folder
+  
+  layoutDir = ''
+  
+  for( i in 1:nParts){
+    layoutDir <- paste(layoutDir, layoutDirParts[i], sep = "/")
+  }
+  layoutDir <- paste(layoutDir, "*Layout*", sep = "/")
+  
+  props$arraylayoutfile <- Sys.glob(layoutDir)
+  
+  
+  
+  return (props)
+}
+
+prep_image_folder <- function(docId) {
+  task = ctx$task
+  evt = TaskProgressEvent$new()
+  evt$taskId = task$id
+  evt$total = 1
+  evt$actual = 0
+  evt$message = "Downloading image files"
+  ctx$client$eventService$sendChannel(task$channelId, evt)
+  
+  #1. extract files
+  doc <- ctx$client$fileService$get(docId)
+  filename <- tempfile()
+  writeBin(ctx$client$fileService$download(docId), filename)
+  
+  on.exit(unlink(filename, recursive = TRUE, force = TRUE))
+  
+  image_list <- vector(mode = "list", length = length(grep(".zip", doc$name)))
+  
+  # unzip archive (which presumably exists at this point)
+  tmpdir <- tempfile()
+  unzip(filename, exdir = tmpdir)
+  
+  imageResultsPath <- file.path(list.files(tmpdir, full.names = TRUE), "ImageResults")
+  
+  f.names <- list.files(imageResultsPath, full.names = TRUE)
+  
+  fdir <- str_split_fixed(f.names[1], "/", Inf)
+  fdir <- fdir[length(fdir)]
+  
+  fname <- str_split(fdir, '[.]', Inf)
+  fext <- fname[[1]][2]
+  
+  # Images for all series will be here
+  return(list(imageResultsPath, fext))
+  
+}
+
+prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
   baseFilename <- paste0(tmpDir, "/", grp, "_")
   grd.ImageNameUsed = grp 
 
@@ -127,19 +232,22 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
     imageList <- list(imageList)
   }
 
-  dfJson = list("sqcMinDiameter" = sqcMinDiameter,
-                "segEdgeSensitivity" = segEdgeSensitivity,
-                "qntSeriesMode" = qntSeriesMode,
-                "qntShowPamGridViewer" = qntShowPamGridViewer,
-                "qntSaturationLimit" = qntSaturationLimit,
-                "grdSpotPitch" = grdSpotPitch,
-                "grdSpotSize" = grdSpotSize,
-                "grdUseImage" = grdUseImage,
-                "pgMode" = pgMode,
-                "dbgShowPresenter" = dbgShowPresenter,
-                "arraylayoutfile" = props$arraylayoutfile,
-                "griddingoutputfile" = gridfile,
-                "outputfile" = outputfile, "imageslist" = imageList)
+  dfJson = list("sqcMinDiameter"=props$sqcMinDiameter,
+                "sqcMaxDiameter"=props$sqcMaxDiameter,
+                "segEdgeSensitivity"=props$segEdgeSensitivity,
+                "qntSeriesMode"=0,
+                "qntShowPamGridViewer"=0,
+                "grdSpotPitch"=props$grdSpotPitch,
+                "grdSpotsize"=props$grdSpotsize,
+                "grdRotation"=props$grdRotation,
+                "qntSaturationLimit"=props$qntSaturationLimit,
+                "segMethod"=props$segMethod,
+                "grdUseImage"="Last",
+                "pgMode"="quantification",
+                "dbgShowPresenter"=0,
+                "arraylayoutfile"=props$arraylayoutfile,
+                "outputfile"=outputfile, "imageslist"=unlist(imageList))
+  
 
   jsonData <- toJSON(dfJson, pretty = TRUE, auto_unbox = TRUE)
 
@@ -169,7 +277,7 @@ do.quant <- function(df, tmpDir) {
                                c(MCR_PATH,
                                  paste0("--param-file=", jsonFile[1])),
                                stdout = outLog)
-
+    
 
     return(list(p = p, out = outLog))
   })
@@ -177,6 +285,7 @@ do.quant <- function(df, tmpDir) {
   # Wait for all processes to finish
   for (pObj in procList)
   {
+    
     # Wait for 10 minutes then times out
     pObj$p$wait(timeout = 1000 * 60 * 10)
     exitCode <- pObj$p$get_exit_status()
@@ -187,10 +296,10 @@ do.quant <- function(df, tmpDir) {
           print(paste0('kill process -- ' ))
           print(pObj$p)
           pObj2$p$kill()
+          
         }
       }
       
-
       stop(readChar(pObj$out, file.info(pObj$out)$size))
     }
   }
@@ -260,93 +369,6 @@ do.quant <- function(df, tmpDir) {
 }
 
 
-get_operator_props <- function(ctx, imagesFolder) {
-  sqcMinDiameter <- -1
-  grdSpotPitch <- -1
-  grdSpotSize <- -1
-  qntSaturationLimit <- -1
-  isDiagnostic <- -1
-
-  operatorProps <- ctx$
-    query$
-    operatorSettings$
-    operatorRef$
-    propertyValues
-
-  for (prop in operatorProps) {
-    if (prop$name == "Min Diameter") {
-      sqcMinDiameter <- as.numeric(prop$value)
-    }
-
-    if (prop$name == "Spot Pitch") {
-      grdSpotPitch <- as.numeric(prop$value)
-    }
-
-    if (prop$name == "Spot Size") {
-      grdSpotSize <- as.numeric(prop$value)
-    }
-    
-    if (prop$name == "Saturation Limit") {
-      qntSaturationLimit <- as.numeric( prop$value )
-    }
-    
-    if (prop$name == "Diagnostic Output") {
-      isDiagnostic <- prop$value
-    }
-    
-  }
-
-  if (is.null(grdSpotPitch) || grdSpotPitch == -1) {
-    grdSpotPitch <- 21.5
-  }
-
-  if (is.null(grdSpotSize) || grdSpotSize == -1) {
-    grdSpotSize <- 0.66
-  }
-
-  if (is.null(sqcMinDiameter) || sqcMinDiameter == -1) {
-    sqcMinDiameter <- 0.45
-  }
-  
-  if (is.null(qntSaturationLimit) || qntSaturationLimit == -1) {
-    qntSaturationLimit <- 2^12 - 1
-  }
-  
-  if (is.null(isDiagnostic) || isDiagnostic == -1) {
-    isDiagnostic <- "Yes"
-  }
-  
-  if( isDiagnostic =="No"){
-    isDiagnostic = FALSE
-  }else{
-    isDiagnostic = TRUE
-  }
-
-  props <- list()
-
-  props$sqcMinDiameter <- sqcMinDiameter
-  props$grdSpotPitch <- grdSpotPitch
-  props$grdSpotSize <- grdSpotSize
-  props$qntSaturationLimit <- qntSaturationLimit
-  props$isDiagnostic <- isDiagnostic
-
-
-  # Get array layout
-  layoutDirParts <- str_split_fixed(imagesFolder, "/", Inf)
-  nParts <- length(layoutDirParts) - 1 # Layout is in parent folder
-
-  layoutDir = ''
-
-  for (i in 1:nParts) {
-    layoutDir <- paste(layoutDir, layoutDirParts[i], sep = "/")
-  }
-  layoutDir <- paste(layoutDir, "*Layout*", sep = "/")
-
-  props$arraylayoutfile <- Sys.glob(layoutDir)
-
-  return(props)
-}
-
 remove_variable_ns <- function(varName) {
   fname <- str_split(varName, '[.]', Inf)
   fext <- fname[[1]][2]
@@ -355,50 +377,15 @@ remove_variable_ns <- function(varName) {
 }
 
 
-prep_image_folder <- function(docId) {
-  task = ctx$task
-  evt = TaskProgressEvent$new()
-  evt$taskId = task$id
-  evt$total = 1
-  evt$actual = 0
-  evt$message = "Downloading image files"
-  ctx$client$eventService$sendChannel(task$channelId, evt)
-
-  #1. extract files
-  doc <- ctx$client$fileService$get(docId)
-  filename <- tempfile()
-  writeBin(ctx$client$fileService$download(docId), filename)
-
-  on.exit(unlink(filename, recursive = TRUE, force = TRUE))
-
-  image_list <- vector(mode = "list", length = length(grep(".zip", doc$name)))
-
-  # unzip archive (which presumably exists at this point)
-  tmpdir <- tempfile()
-  unzip(filename, exdir = tmpdir)
-
-  imageResultsPath <- file.path(list.files(tmpdir, full.names = TRUE), "ImageResults")
-
-  f.names <- list.files(imageResultsPath, full.names = TRUE)
-
-  fdir <- str_split_fixed(f.names[1], "/", Inf)
-  fdir <- fdir[length(fdir)]
-
-  fname <- str_split(fdir, '[.]', Inf)
-  fext <- fname[[1]][2]
-
-  # Images for all series will be here
-  return(list(imageResultsPath, fext))
-
-}
-
 
 # =====================
 # MAIN OPERATOR CODE
 # =====================
-#http://localhost:5402/admin/w/c41add34d78230432ba802d98801cec3/ds/78c6b6d3-b857-4fed-8a97-a25e45ca06a6
-# options("tercen.workflowId" = "c41add34d78230432ba802d98801cec3")
-# options("tercen.stepId" = "78c6b6d3-b857-4fed-8a97-a25e45ca06a6")
+#http://localhost:5402/admin/w/11143520a88672e0a07f89bb88075d15/ds/78c6b6d3-b857-4fed-8a97-a25e45ca06a6
+# After review
+# http://localhost:5402/admin/w/11143520a88672e0a07f89bb88075d15/ds/3e0c16ef-788e-4447-8c95-22a0481d4104
+# options("tercen.workflowId" = "11143520a88672e0a07f89bb88075d15")
+# options("tercen.stepId" = "3e0c16ef-788e-4447-8c95-22a0481d4104")
 
 actual <- 0
 assign("actual", actual, envir = .GlobalEnv)
@@ -498,7 +485,7 @@ if (!is.null(task)) {
   evt$taskId = task$id
 }
 
-tmpDir <- tempdir()
+tmpDir <-tempdir()
 
 
 # Prepare processor queu
@@ -543,7 +530,7 @@ if (!is.null(task)) {
 }
 
 # Execution step
-df <- qtTable %>%
+qtTable %>%
   group_by(queu) %>%
   do(do.quant(., tmpDir)) %>%
   ungroup() %>%
@@ -551,5 +538,6 @@ df <- qtTable %>%
   arrange(.ci) %>%
   ctx$addNamespace() %>%
   ctx$save()
+
 
 
