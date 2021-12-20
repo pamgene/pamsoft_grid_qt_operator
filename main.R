@@ -12,7 +12,7 @@ get_operator_props <- function(ctx, imagesFolder){
   sqcMaxDiameter     <- 0.85
   grdSpotPitch       <- 21.5
   grdSpotSize        <- 0.66
-  grdRotation        <- 0
+  grdRotation        <- seq(-2,2, by=0.25)
   qntSaturationLimit <- 4095
   segMethod          <- "Edge"
   segEdgeSensitivity <- list(0, 0.05)
@@ -290,7 +290,6 @@ do.quant <- function(df, tmpDir) {
                                  paste0("--param-file=", jsonFile[1])),
                                stdout = outLog)
     
-    
 
     return(list(p = p, out = outLog))
   })
@@ -551,6 +550,3 @@ qtTable %>%
   arrange(.ci) %>%
   ctx$addNamespace() %>%
   ctx$save()
-
-
-
