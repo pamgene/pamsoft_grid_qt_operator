@@ -5,7 +5,7 @@
   "inputFileUris": ["pg_data.zip"],
   "inputDataUri": "input_r.csv",
   "outputDataUri": ["table1r.csv","table2r.csv"],
-  "columns": ["documentId","ds1.grdImageNameUsed","ds0.Image","ds1.spotRow","ds1.spotCol","ds1.ID"],
+  "columns": ["documentId","ds5.grdImageNameUsed","ds5.Image","ds1.spotRow","ds1.spotCol","ds1.ID"],
   "rows": ["gs1.variable"],
   "colors": [],
   "labels": [],
