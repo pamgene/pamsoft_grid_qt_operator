@@ -1,4 +1,15 @@
-FROM tercen/pamsoft_grid:1.0.23
+FROM debian:bullseye-slim as builder
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN apt-get -q update && \
+    apt-get install -q -y --no-install-recommends \
+      libtiff-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+
+FROM tercen/pamsoft_grid:1.0.24
 
 ENV RENV_VERSION 0.13.2
 
