@@ -11,6 +11,10 @@ RUN apt-get -q update && \
 
 FROM tercen/pamsoft_grid:1.0.24
 
+COPY --from=builder /usr/include/x86_64-linux-gnu/tiff* /usr/include/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libtiff* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libtiff* /usr/lib/x86_64-linux-gnu/
+
 ENV RENV_VERSION 0.13.2
 
 RUN R -e "install.packages('remotes', repos = c(CRAN = 'https://cran.r-project.org'))"
