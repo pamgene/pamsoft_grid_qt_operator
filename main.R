@@ -5,7 +5,7 @@ library(dplyr)
 library(stringr)
 library(jsonlite)
 library(processx)
-library(future)
+library(parallelly)
 library(tiff)
 
 source('aux_functions.R')
@@ -381,7 +381,7 @@ tmpDir <- tempdir()
 
 # Prepare processor queu
 groups <- unique(qtTable$grdImageNameUsed)
-nCores <- future::availableCores() 
+nCores <- parallelly::availableCores(methods="cgroups.cpuset")
 queu <- list()
 
 currentCore <- 1
