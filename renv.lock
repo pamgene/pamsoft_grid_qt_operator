@@ -38,10 +38,10 @@
     },
     "Rcpp": {
       "Package": "Rcpp",
-      "Version": "1.0.7",
+      "Version": "1.0.8.3",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "dab19adae4440ae55aa8a9d238b246bb"
+      "Hash": "32e79b908fda56ee57fe518a8d37b864"
     },
     "askpass": {
       "Package": "askpass",
@@ -63,6 +63,13 @@
       "Source": "Repository",
       "Repository": "RSPM",
       "Hash": "3e3f28efcadfda442cd18651fbcbbecf"
+    },
+    "codetools": {
+      "Package": "codetools",
+      "Version": "0.2-18",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "019388fc48e48b3da0d3a76ff94608a8"
     },
     "crayon": {
       "Package": "crayon",
@@ -99,12 +106,26 @@
       "Repository": "RSPM",
       "Hash": "fea074fb67fe4c25d47ad09087da847d"
     },
+    "future": {
+      "Package": "future",
+      "Version": "1.25.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "877024e372cf61e41f5d13eafd8d4bac"
+    },
     "generics": {
       "Package": "generics",
       "Version": "0.1.0",
       "Source": "Repository",
       "Repository": "RSPM",
       "Hash": "4d243a9c10b00589889fe32314ffd902"
+    },
+    "globals": {
+      "Package": "globals",
+      "Version": "0.14.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "eca8023ed5ca6372479ebb9b3207f5ae"
     },
     "glue": {
       "Package": "glue",
@@ -127,6 +148,13 @@
       "Repository": "RSPM",
       "Hash": "3471fb65971f1a7b2d4ae7848cf2db8d"
     },
+    "listenv": {
+      "Package": "listenv",
+      "Version": "0.8.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "0bde42ee282efb18c7c4e63822f5b4f7"
+    },
     "magrittr": {
       "Package": "magrittr",
       "Version": "2.0.1",
@@ -148,6 +176,13 @@
       "Repository": "RSPM",
       "Hash": "a399e4773075fc2375b71f45fca186c4"
     },
+    "parallelly": {
+      "Package": "parallelly",
+      "Version": "1.30.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "67db13907a9cea89c118cf82d448799f"
+    },
     "pillar": {
       "Package": "pillar",
       "Version": "1.5.0",
@@ -164,17 +199,17 @@
     },
     "plyr": {
       "Package": "plyr",
-      "Version": "1.8.6",
+      "Version": "1.8.7",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "ec0e5ab4e5f851f6ef32cd1d1984957f"
+      "Hash": "9c17c6ee41639ebdc1d7266546d3b627"
     },
     "processx": {
       "Package": "processx",
-      "Version": "3.5.2",
+      "Version": "3.4.5",
       "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "0cbca2bc4d16525d009c4dbba156b37c"
+      "Repository": "RSPM",
+      "Hash": "22aab6098cb14edd0a5973a8438b569b"
     },
     "ps": {
       "Package": "ps",
@@ -234,10 +269,28 @@
     },
     "tercen": {
       "Package": "tercen",
-      "Version": "0.10.8",
-      "Source": "Repository",
-      "Repository": "TERCEN",
-      "Hash": "7676dd098faf9b2267411f8f129f5d8b"
+      "Version": "0.12.0",
+      "Source": "GitHub",
+      "Remotes": "tercen/tercenApi@0.11.0",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "teRcen",
+      "RemoteUsername": "tercen",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "44557eba1fb1614ba63f03944badda988e883971",
+      "Hash": "f3d998dd752e07ad5bec40a78e33af68"
+    },
+    "tercenApi": {
+      "Package": "tercenApi",
+      "Version": "0.12.2",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "teRcenApi",
+      "RemoteUsername": "tercen",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "7f1274676d90681341833c289688e80f45c2638f",
+      "Hash": "4cae4831bfaadb584e4c2fcc80f53768"
     },
     "tibble": {
       "Package": "tibble",
@@ -255,10 +308,10 @@
     },
     "tiff": {
       "Package": "tiff",
-      "Version": "0.1-10",
+      "Version": "0.1-11",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "43c2af1b04664ad8f60e35f4fa10dfac"
+      "Hash": "9b1679a33f3adff6a6eb05c97fb90f50"
     },
     "utf8": {
       "Package": "utf8",
@@ -266,6 +319,13 @@
       "Source": "Repository",
       "Repository": "RSPM",
       "Hash": "4a5081acfb7b81a572e4384a7aaf2af1"
+    },
+    "uuid": {
+      "Package": "uuid",
+      "Version": "1.0-4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "99c959c7424be995ddca19b5736c8dd0"
     },
     "vctrs": {
       "Package": "vctrs",
