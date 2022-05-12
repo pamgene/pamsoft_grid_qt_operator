@@ -4,8 +4,13 @@ library(dplyr)
 library(stringr)
 library(jsonlite)
 library(processx)
+library(parallelly)
 
 library(tiff)
+library(tim)
+library(tools)
+library(stringi)
+
 
 source('aux_functions.R')
 
@@ -19,7 +24,8 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
   image = df$Image[[1]]
   gridImageUsedTable = df %>% filter(Image == image)
 
-  gridImageUsedTable$variable = sapply(gridImageUsedTable$variable, remove_variable_ns)
+  #gridImageUsedTable$variable = sapply(gridImageUsedTable$variable, remove_variable_ns)
+  gridImageUsedTable$variable <- stri_split_fixed(gridImageUsedTable$variable, ".", 2, simplify = TRUE)[,2]
 
   grdRow <- gridImageUsedTable %>%
     filter(variable == "gridX") %>%
@@ -259,23 +265,15 @@ do.quant <- function(df, tmpDir) {
 }
 
 
-remove_variable_ns <- function(varName) {
-  fname <- str_split(varName, '[.]', Inf)
-  fext <- fname[[1]][2]
-
-  return(fext)
-}
-
-
 
 # =====================
 # MAIN OPERATOR CODE
 # =====================
 #http://127.0.0.1:5402/admin/w/2e726ebfbecf78338faf09317803614c/ds/bdb3b164-3a0e-4aae-a03d-f275ebb2395a
 # After review
-# http://127.0.0.1:5402/admin/w/33e94f2e4bd506d09e3b5420a2051743/ds/bdb3b164-3a0e-4aae-a03d-f275ebb2395a
-# options("tercen.workflowId" = "33e94f2e4bd506d09e3b5420a2051743")
-# options("tercen.stepId" = "bdb3b164-3a0e-4aae-a03d-f275ebb2395a")
+# http://127.0.0.1:5402/test-team/w/cc41c236da58dcb568c6fe1a320140d2/ds/961ce284-0eec-48d8-825a-a95728e5678c
+# options("tercen.workflowId" = "cc41c236da58dcb568c6fe1a320140d2")
+# options("tercen.stepId" = "961ce284-0eec-48d8-825a-a95728e5678c")
 
 actual <- 0
 assign("actual", actual, envir = .GlobalEnv)
@@ -380,7 +378,7 @@ tmpDir <- tempdir()
 
 # Prepare processor queu
 groups <- unique(qtTable$grdImageNameUsed)
-nCores <- parallel::detectCores()
+nCores <- parallelly::availableCores(methods="cgroups.cpuset")
 queu <- list()
 
 currentCore <- 1
