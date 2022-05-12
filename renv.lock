@@ -38,10 +38,10 @@
     },
     "Rcpp": {
       "Package": "Rcpp",
-      "Version": "1.0.7",
+      "Version": "1.0.6",
       "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "dab19adae4440ae55aa8a9d238b246bb"
+      "Repository": "RSPM",
+      "Hash": "dbb5e436998a7eba5a9d682060533338"
     },
     "askpass": {
       "Package": "askpass",
@@ -164,17 +164,17 @@
     },
     "plyr": {
       "Package": "plyr",
-      "Version": "1.8.6",
+      "Version": "1.8.7",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "ec0e5ab4e5f851f6ef32cd1d1984957f"
+      "Hash": "9c17c6ee41639ebdc1d7266546d3b627"
     },
     "processx": {
       "Package": "processx",
-      "Version": "3.5.2",
+      "Version": "3.5.3",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "0cbca2bc4d16525d009c4dbba156b37c"
+      "Hash": "8bbae1a548d0d3fdf6647bdd9d35bf6d"
     },
     "ps": {
       "Package": "ps",
@@ -234,10 +234,28 @@
     },
     "tercen": {
       "Package": "tercen",
-      "Version": "0.10.8",
-      "Source": "Repository",
-      "Repository": "TERCEN",
-      "Hash": "7676dd098faf9b2267411f8f129f5d8b"
+      "Version": "0.12.0",
+      "Source": "GitHub",
+      "Remotes": "tercen/tercenApi@0.11.0",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "teRcen",
+      "RemoteUsername": "tercen",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "44557eba1fb1614ba63f03944badda988e883971",
+      "Hash": "f3d998dd752e07ad5bec40a78e33af68"
+    },
+    "tercenApi": {
+      "Package": "tercenApi",
+      "Version": "0.12.2",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "teRcenApi",
+      "RemoteUsername": "tercen",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "7f1274676d90681341833c289688e80f45c2638f",
+      "Hash": "4cae4831bfaadb584e4c2fcc80f53768"
     },
     "tibble": {
       "Package": "tibble",
@@ -255,10 +273,10 @@
     },
     "tiff": {
       "Package": "tiff",
-      "Version": "0.1-10",
+      "Version": "0.1-11",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "43c2af1b04664ad8f60e35f4fa10dfac"
+      "Hash": "9b1679a33f3adff6a6eb05c97fb90f50"
     },
     "tim": {
       "Package": "tim",
@@ -279,6 +297,13 @@
       "Source": "Repository",
       "Repository": "RSPM",
       "Hash": "4a5081acfb7b81a572e4384a7aaf2af1"
+    },
+    "uuid": {
+      "Package": "uuid",
+      "Version": "1.0-4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "99c959c7424be995ddca19b5736c8dd0"
     },
     "vctrs": {
       "Package": "vctrs",
