@@ -25,9 +25,6 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
   image = df$Image[[1]]
   gridImageUsedTable = df %>% filter(Image == image)
 
-  #gridImageUsedTable$variable = sapply(gridImageUsedTable$variable, remove_variable_ns)
-  gridImageUsedTable$variable <- stri_split_fixed(gridImageUsedTable$variable, ".", 2, simplify = TRUE)[,2]
-
   grdRow <- gridImageUsedTable %>%
     filter(variable == "gridX") %>%
     pull(spotRow)
@@ -270,11 +267,11 @@ do.quant <- function(df, tmpDir) {
 # =====================
 # MAIN OPERATOR CODE
 # =====================
-#http://127.0.0.1:5402/admin/w/2e726ebfbecf78338faf09317803614c/ds/bdb3b164-3a0e-4aae-a03d-f275ebb2395a
-# After review
-# http://127.0.0.1:5402/test-team/w/cc41c236da58dcb568c6fe1a320140d2/ds/961ce284-0eec-48d8-825a-a95728e5678c
-# options("tercen.workflowId" = "cc41c236da58dcb568c6fe1a320140d2")
-# options("tercen.stepId" = "961ce284-0eec-48d8-825a-a95728e5678c")
+# http://127.0.0.1:5402/test-team/w/8ef9012b2d2f050214e16189ba0406b4/ds/a87f8180-df0e-4440-a86d-e6b41ebda2f9
+
+# http://127.0.0.1:5402/test-team/w/8ef9012b2d2f050214e16189ba0406b4/ds/41b459a9-34c2-464f-970e-e2632c4b9a13
+# options("tercen.workflowId" = "8ef9012b2d2f050214e16189ba0406b4")
+# options("tercen.stepId" = "41b459a9-34c2-464f-970e-e2632c4b9a13")
 
 actual <- 0
 assign("actual", actual, envir = .GlobalEnv)
@@ -290,13 +287,24 @@ if (!is.null(task)) {
   ctx$client$eventService$sendChannel(task$channelId, evt)
 }
 
-required.cnames = c("documentId", "grdImageNameUsed", "Image", "spotRow", "spotCol", "ID")
+# documetnId column may have the prefix, as it is now possible to have multiple documetn columns  
+colNames <- ctx$cnames %>% as.list()
+
+# Checking for documentId columns exist and what they are
+docIdCols <- unname(unlist(colNames[unlist(lapply(colNames, function(x){
+  return(grepl("documentId", x, fixed = TRUE))
+} ))]))
+
+if( length(docIdCols) == 0 || length(docIdCols) > 2){
+  stop("Either 1 or 2 documentId columns are required.")
+}
+
+# As tehr emay be multiple documentId columns, they are required but will keep their prefix
+required.cnames = c("grdImageNameUsed", "Image", "spotRow", "spotCol", "ID")
 required.rnames = c("variable")
 
 cnames.with.ns = ctx$cnames
 rnames.with.ns = ctx$rnames
-
-
 
 # Check if all columns exist exist
 if(!all(unlist(  lapply(required.cnames, function(x)  any(grepl(x,  cnames.with.ns)) )))){
@@ -305,6 +313,9 @@ if(!all(unlist(  lapply(required.cnames, function(x)  any(grepl(x,  cnames.with.
                  
   stop(msg)
 }
+
+# Add the potentially multiple documentId columns to the other required columns
+required.cnames = append( docIdCols, required.cnames )
   
 
 # Check if row is setup correctly
@@ -341,6 +352,7 @@ names(rTable) = required.rnames
 
 # Ensure all variables have been selected in the gather step
 variables <- rTable %>% pull(variable)
+
 req.variables <- c("grdRotation", "grdXFixedPosition", "grdYFixedPosition", "gridX", "gridY", "diameter", 
   "bad", "empty",  "manual")
 
@@ -352,10 +364,8 @@ if( !all(unlist(lapply( req.variables, function(x){ any(grepl(x, variables))  } 
 }
 
 
-
-docId <- unique(cTable["documentId"])[[1]]
-imgInfo <- prep_image_folder(docId)
-props <- get_operator_props(ctx, imgInfo[1])
+imgInfo   <- prep_image_folder(ctx, docIdCols)
+props     <- get_operator_props(ctx, imgInfo)
 
 qtTable <- ctx$select(c(".ci", ".ri", ".y"))
 
@@ -367,7 +377,7 @@ qtTable = dplyr::left_join(qtTable, cTable, by = ".ci")
 rTable[[".ri"]] = seq(0, nrow(rTable) - 1)
 
 qtTable = dplyr::left_join(qtTable, rTable, by = ".ri")
-
+qtTable$variable <- stri_split_fixed(qtTable$variable, ".", 2, simplify = TRUE)[,2]
 
 if (!is.null(task)) {
   evt = TaskProgressEvent$new()
