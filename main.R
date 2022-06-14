@@ -15,6 +15,7 @@ library(stringi)
 
 source('aux_functions.R')
 
+ctx = tercenCtx()
 
 prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
   #tmpDir <- '/home/rstudio/projects/pamsoft_grid_qt_operator/tmp/'
@@ -151,7 +152,7 @@ prep_quant_files <- function(df, props, docId, imgInfo, grp, tmpDir) {
 }
 
 do.quant <- function(df, tmpDir) {
-  ctx = tercenCtx()
+  
   task = ctx$task
 
   grpCluster <- unique(df$grdImageNameUsed)
@@ -276,8 +277,6 @@ do.quant <- function(df, tmpDir) {
 actual <- 0
 assign("actual", actual, envir = .GlobalEnv)
 
-ctx = tercenCtx()
-
 task = ctx$task
 
 if (!is.null(task)) {
@@ -389,7 +388,9 @@ tmpDir <- tempdir()
 
 # Prepare processor queu
 groups <- unique(qtTable$grdImageNameUsed)
-nCores <- parallelly::availableCores(methods="cgroups.cpuset")
+nCpusRequested = length(groups)
+ctx$requestResources(nCpus=nCpusRequested, ram=500000000, ram_per_cpu=500000000)
+nCores <- ctx$availableCores() 
 queu <- list()
 
 currentCore <- 1
