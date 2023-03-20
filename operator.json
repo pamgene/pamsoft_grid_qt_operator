@@ -4,7 +4,7 @@
   "tags": ["image analysis"],
   "authors": ["tercen"],
   "urls": ["https://github.com/pamgene/pamsoft_grid_qt_operator"],
-  "container": ["pamgene/pamsoft_grid_qt_operator:latest"],
+  "container":"pamgene/pamsoft_grid_qt_operator:latest",
   "properties": [
     {
       "kind": "DoubleProperty",
