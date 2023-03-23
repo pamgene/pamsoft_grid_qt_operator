@@ -4,47 +4,47 @@
   "tags": ["image analysis"],
   "authors": ["tercen"],
   "urls": ["https://github.com/pamgene/pamsoft_grid_qt_operator"],
-  "container": ["pamgene/pamsoft_grid_qt_operator:1.3.0"],
+  "container":"pamgene/pamsoft_grid_qt_operator:1.3.3",
   "properties": [
     {
       "kind": "DoubleProperty",
       "name": "Min Diameter",
-      "defaultValue": "0.45",
+      "defaultValue": 0.45,
       "description": "",
       "values": {}
     },
     {
       "kind": "DoubleProperty",
       "name": "Max Diameter",
-      "defaultValue": "0.85",
+      "defaultValue": 0.85,
       "description": "",
       "values": {}
     },
     {
       "kind": "DoubleProperty",
       "name": "Saturation Limit",
-      "defaultValue": "4095",
+      "defaultValue": 4095,
       "description": "",
       "values": {}
     },
     {
       "kind": "DoubleProperty",
       "name": "Spot Pitch",
-      "defaultValue": "0",
+      "defaultValue": 0,
       "description": "",
       "values": {}
     },
     {
       "kind": "DoubleProperty",
       "name": "Spot Size",
-      "defaultValue": "0.66",
+      "defaultValue": 0.66,
       "description": "",
       "values": {}
     },
     {
       "kind": "DoubleProperty",
       "name": "Edge Sensitivity",
-      "defaultValue": "0.05",
+      "defaultValue": 0.05,
       "description": "",
       "values": {}
     },
