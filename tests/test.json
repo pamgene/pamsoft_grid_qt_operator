@@ -1,10 +1,10 @@
 {
   "kind": "OperatorUnitTest",
   "name": "test",
-  "namespace": "ds2",
+  "namespace": "ds1",
   "inputFileUris": ["pg_data.zip"],
   "inputDataUri": "input.csv",
-  "outputDataUri": ["table1.csv","table2.csv", "table3.csv"],
+  "outputDataUri": ["table1.csv","table2.csv"],
   "columns": ["documentId","ds1.grdImageNameUsed","ds0.Image","ds1.spotRow","ds1.spotCol","ds1.ID"],
   "rows": ["gs0.variable"],
   "colors": [],
