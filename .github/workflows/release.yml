@@ -26,12 +26,12 @@ jobs:
         fetch-depth: 0
     - name: ENV
       run: |
-        echo "REPO_NAME=${{ github.event.repository.name }}" >> $GITHUB_ENV
+        #echo "REPO_NAME=${{ github.event.repository.name }}" >> $GITHUB_ENV
         echo "TAG=${GITHUB_REF##*/}" >> $GITHUB_ENV
         echo "DOCKER_IMAGE=pamgene/${{ github.event.repository.name }}" >> $GITHUB_ENV
-    - name: Check docker image name
+    - name: Update container in operator JSON
       run: |
-        jq '.container' operator.json | grep -q "$DOCKER_IMAGE:$TAG"
+        jq --arg variable "$DOCKER_IMAGE:$TAG" '.container = $variable' operator.json
     - name: Build docker image
       run: |
         docker build -t $DOCKER_IMAGE:$TAG .
