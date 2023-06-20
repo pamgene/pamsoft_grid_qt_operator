@@ -7,7 +7,7 @@ docker build -t tercen/pamsoft_grid_qt_operator:1.0.12 .
 
 ##### Notes
 
-Steps to install MCR in the rstudio image
+Steps to install MCR in the rstudio image:
 
 1. Upload the MCR to /home/rstudio/mcr/ ($MCRTMP) in the tercen-studio image
 
